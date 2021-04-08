@@ -1,7 +1,12 @@
 package edu.cwru.sepia.agent.planner;
 
+import edu.cwru.sepia.agent.planner.actions.DepositAction;
+import edu.cwru.sepia.agent.planner.actions.HarvestAction;
+import edu.cwru.sepia.agent.planner.actions.MoveAction;
+import edu.cwru.sepia.agent.planner.resources.Resource;
 import edu.cwru.sepia.environment.model.state.State;
 
+import javax.swing.plaf.basic.BasicInternalFrameTitlePane;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -41,7 +46,10 @@ import java.util.Map;
 public class GameState implements Comparable<GameState> {
     private static final int BUILD_PEASANT_GOLD = 400, BUILD_PEASANT_FOOD = 1, TOWNHALL_FOOD = 3;
 
+    private Position townhall_position;
+
     private Map<Integer, Peasant> peasants = new HashMap<>(TOWNHALL_FOOD);
+    private Map<Integer, Resource> resources = new HashMap<>();
 
     private int currGold, currWood, currFood;
     private boolean buildPeasants;
@@ -80,6 +88,14 @@ public class GameState implements Comparable<GameState> {
         return this.currGold >= BUILD_PEASANT_GOLD && currFood >= BUILD_PEASANT_FOOD;
     }
 
+    private boolean canHarvestNow(Peasant peasant) {
+        return true;
+    }
+
+    private Resource getResourceAt(Position position) {
+        return null;
+    }
+
     /**
      * The branching factor of this search graph are much higher than the planning. Generate all of the possible
      * successor states and their associated actions in this method.
@@ -97,14 +113,28 @@ public class GameState implements Comparable<GameState> {
 
         for (Peasant peasant : this.peasants.values()) {
             if (peasant.isCarrying()) {
-                // TODO: Allowed actions while carrying something
+                if (peasant.getPosition().isAdjacent(townhall_position)) {
+                    DepositAction action = new DepositAction(peasant);
+                    // TODO: Apply action
+                } else {
+                    MoveAction action = new MoveAction(peasant, townhall_position);
+                    // TODO: Apply action
+                }
+            } else if (canHarvestNow(peasant)) {
+                Resource resource = getResourceAt(peasant.getPosition());
+                HarvestAction action = new HarvestAction(peasant, resource);
             } else {
-                // TODO: Allowed actions while not carrying anything
+                for (Resource resource : this.resources.values()) {
+                    MoveAction action = new MoveAction(peasant, resource.getPosition());
+                    // TODO: Apply action
+                }
             }
         }
 
+        children.add(next_state);
 
-        return null;
+
+        return children;
     }
 
     /**

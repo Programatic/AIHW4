@@ -24,4 +24,7 @@ public class Peasant {
         this.currWood = currWood;
     }
 
+    public Position getPosition() {
+        return position;
+    }
 }
