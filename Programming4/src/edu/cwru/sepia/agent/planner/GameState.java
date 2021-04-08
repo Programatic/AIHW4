@@ -2,7 +2,10 @@ package edu.cwru.sepia.agent.planner;
 
 import edu.cwru.sepia.environment.model.state.State;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * This class is used to represent the state of the game after applying one of the avaiable actions. It will also
@@ -36,6 +39,12 @@ import java.util.List;
  * class/structure you use to represent actions.
  */
 public class GameState implements Comparable<GameState> {
+    private static final int BUILD_PEASANT_GOLD = 400, BUILD_PEASANT_FOOD = 1, TOWNHALL_FOOD = 3;
+
+    private Map<Integer, Peasant> peasants = new HashMap<>(TOWNHALL_FOOD);
+
+    private int currGold, currWood, currFood;
+    private boolean buildPeasants;
 
     /**
      * Construct a GameState from a stateview object. This is used to construct the initial search node. All other
@@ -51,6 +60,10 @@ public class GameState implements Comparable<GameState> {
         // TODO: Implement me!
     }
 
+    public GameState(GameState state) {
+
+    }
+
     /**
      * Unlike in the first A* assignment there are many possible goal states. As long as the wood and gold requirements
      * are met the peasants can be at any location and the capacities of the resource locations can be anything. Use
@@ -63,6 +76,10 @@ public class GameState implements Comparable<GameState> {
         return false;
     }
 
+    private boolean canBuild() {
+        return this.currGold >= BUILD_PEASANT_GOLD && currFood >= BUILD_PEASANT_FOOD;
+    }
+
     /**
      * The branching factor of this search graph are much higher than the planning. Generate all of the possible
      * successor states and their associated actions in this method.
@@ -70,7 +87,23 @@ public class GameState implements Comparable<GameState> {
      * @return A list of the possible successor states and their associated actions
      */
     public List<GameState> generateChildren() {
-        // TODO: Implement me!
+        List<GameState> children = new ArrayList<>();
+
+        GameState next_state = new GameState(this);
+
+        if (buildPeasants && this.canBuild()) {
+            // TODO: Build action
+        }
+
+        for (Peasant peasant : this.peasants.values()) {
+            if (peasant.isCarrying()) {
+                // TODO: Allowed actions while carrying something
+            } else {
+                // TODO: Allowed actions while not carrying anything
+            }
+        }
+
+
         return null;
     }
 
