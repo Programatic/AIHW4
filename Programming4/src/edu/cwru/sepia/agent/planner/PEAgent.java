@@ -91,12 +91,11 @@ public class PEAgent extends Agent {
 
         while (!plan.empty()) {
             StripsAction action = plan.peek();
+            ActionResult previousAction = prev.get(action.getPeasantID());
 
         }
 
         return actions;
-
-        return null;
     }
 
     /**

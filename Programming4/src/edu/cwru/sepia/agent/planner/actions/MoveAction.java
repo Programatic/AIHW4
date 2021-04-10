@@ -5,23 +5,29 @@ import edu.cwru.sepia.agent.planner.Peasant;
 import edu.cwru.sepia.agent.planner.Position;
 
 public class MoveAction implements StripsAction {
-    private Peasant peasant;
-    private Position goalPosition;
+    private Position goalPosition, peasantPosition;
+    private int peasantID;
 
     public MoveAction(Peasant peasant, Position goalPosition) {
-        this.peasant = peasant;
+        this.peasantPosition = peasant.getPosition();
         this.goalPosition = goalPosition;
+        this.peasantID = peasant.getId();
     }
 
     @Override
     public boolean preconditionsMet(GameState state) {
-        return !peasant.getPosition().equals(goalPosition);
+        return !peasantPosition.equals(goalPosition);
     }
 
     @Override
     public GameState apply(GameState state) {
-        state.applyMoveAction(peasant.getId(), goalPosition);
+        state.applyMoveAction(peasantID, goalPosition);
         state.update(this);
         return state;
+    }
+
+    @Override
+    public int getPeasantID() {
+        return this.peasantID;
     }
 }
