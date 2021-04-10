@@ -1,10 +1,6 @@
 package edu.cwru.sepia.agent.planner;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Stack;
+import java.util.*;
 
 import edu.cwru.sepia.agent.planner.actions.DepositAction;
 import edu.cwru.sepia.agent.planner.actions.HarvestAction;
@@ -41,9 +37,9 @@ public class GameState implements Comparable<GameState> {
      * @param buildPeasants True if the BuildPeasant action should be considered
      */
     public GameState(State.StateView state, int playernum, int requiredGold, int requiredWood, boolean buildPeasants) {
-        GameState.REQUIRED_GOLD = requiredGold;
-        GameState.REQUIRED_WOOD = requiredWood;
-        GameState.BUILD_PEASANTS = buildPeasants;
+        REQUIRED_GOLD = requiredGold;
+        REQUIRED_WOOD = requiredWood;
+        BUILD_PEASANTS = buildPeasants;
 
         for (ResourceNode.ResourceView resource : state.getAllResourceNodes()) {
             Position pos = new Position(resource.getXPosition(), resource.getYPosition());
@@ -84,11 +80,6 @@ public class GameState implements Comparable<GameState> {
         plan.addAll(state.plan);
     }
 
-    private boolean canHarvestNow(Peasant peasant) {
-        Resource resource = getResourceAt(peasant.getPosition());
-        return resource != null && resource.getAmount() > 0;
-    }
-
     public Stack<StripsAction> getPlan() {
         Stack<StripsAction> plan = new Stack<StripsAction>();
         for (int i = this.plan.size() - 1; i > -1; i--) {
@@ -117,6 +108,9 @@ public class GameState implements Comparable<GameState> {
         if (BUILD_PEASANTS) {
             this.heuristic += currFood * 5000;
         }
+
+        if (this.isGoal())
+            this.heuristic = Double.MAX_VALUE;
 
         return this.heuristic;
     }
@@ -219,48 +213,22 @@ public class GameState implements Comparable<GameState> {
         this.cost += action.getCost();
     }
 
-    /**
-     * @param o The other game state to compare
-     * @return 1 if this state costs more than the other, 0 if equal, -1 otherwise
-     */
+
     @Override
-    public int compareTo(GameState o) {
-        if (this.heuristic() > o.heuristic()) {
-            return 1;
-        } else if (this.heuristic() < o.heuristic()) {
-            return -1;
-        }
-        return 0;
+    public int compareTo(GameState gameState) {
+        return Double.compare(this.heuristic(), gameState.heuristic());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        GameState gameState = (GameState) o;
+        return currGold == gameState.currGold && currWood == gameState.currWood && currFood == gameState.currFood && peasants.equals(gameState.peasants);
     }
 
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + currGold;
-        result = prime * result + currWood;
-        result = prime * result + ((peasants == null) ? 0 : peasants.hashCode());
-        return result;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        GameState other = (GameState) obj;
-        if (currGold != other.currGold)
-            return false;
-        if (currWood != other.currWood)
-            return false;
-        if (peasants == null) {
-            if (other.peasants != null)
-                return false;
-        } else if (!peasants.equals(other.peasants))
-            return false;
-        return true;
+        return Objects.hash(currGold, currWood, currFood, peasants);
     }
 }

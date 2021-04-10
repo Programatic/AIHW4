@@ -6,11 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.PriorityQueue;
-import java.util.Set;
-import java.util.Stack;
+import java.util.*;
 
 import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.agent.Agent;
@@ -92,51 +88,59 @@ public class PlannerAgent extends Agent {
     /**
      * Perform an A* search of the game graph. This should return your plan as a stack of actions. This is essentially
      * the same as your first assignment. The implementations should be very similar. The difference being that your
-     * nodes are now GameState objects not MapLocation objects.
+     * nodes are now GameState objects not GameState objects.
      *
      * @param startState The state which is being planned from
      * @return The plan or null if no plan is found.
-     */    
+     */
     private Stack<StripsAction> AstarSearch(GameState startState) {
-    	PriorityQueue<GameState> frontierQueue = new PriorityQueue<GameState>();
-		Set<GameState> frontierSet = new HashSet<GameState>();
-    	Set<GameState> exploredSet = new HashSet<GameState>();
-    	frontierQueue.add(startState);
-		frontierSet.add(startState);
-		
-		while(!frontierQueue.isEmpty()) { 
-			GameState current = frontierQueue.remove();
-			frontierSet.remove(current);
-			
-			if(current.isGoal()) {
-				return current.getPlan();
-			}
-			
-			exploredSet.add(current);			
-			current.generateChildren().stream().forEach(child -> {
-				if(!exploredSet.contains(child)){
-					if(!frontierSet.contains(child)) {					
-						frontierQueue.add(child);
-						frontierSet.add(child);
-					} else {
-						GameState first = null;
-						for(GameState possible : frontierSet) {
-							if(possible.equals(child)) {
-								first = possible;
-							}
-						}
-						if(first.getCost() > child.getCost()) {
-							frontierQueue.remove(first);
-							frontierQueue.add(child);
-							frontierSet.remove(first);
-							frontierSet.add(child);
-						}
-					}
-				}
-			});
-		}
-		return null;
+        PriorityQueue<GameState> search = new PriorityQueue<>();
+
+        Set<GameState> open = new HashSet<>();
+        Set<GameState> closed = new HashSet<>();
+
+        search.add(startState);
+        open.add(startState);
+
+        while (!search.isEmpty()) {
+            GameState curr = search.remove();
+            open.remove(curr);
+
+            if (curr.isGoal())
+                return curr.getPlan();
+
+            closed.add(curr);
+            for (GameState child : curr.generateChildren()) {
+                if (!closed.contains(child)) {
+                    if (open.add(child)) {
+                        search.add(child);
+                    } else {
+                        updateCost(open, search, child);
+                    }
+                }
+            }
+        }
+
+        return null;
     }
+
+
+    private void updateCost(Set<GameState> open, PriorityQueue<GameState> search, GameState gs) {
+        for (GameState cand : open) {
+            if (cand.equals(gs)) {
+                if (gs.getCost() < cand.heuristic()) {
+                    open.remove(cand);
+                    search.remove(cand);
+
+                    open.add(gs);
+                    search.add(gs);
+
+                    return;
+                }
+            }
+        }
+    }
+
 
 	/**
      * This has been provided for you. Each strips action is converted to a string with the toString method. This means
