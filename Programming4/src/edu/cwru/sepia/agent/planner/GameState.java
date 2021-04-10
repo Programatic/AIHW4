@@ -169,6 +169,33 @@ public class GameState implements Comparable<GameState> {
         return children;
     }
 
+    public void applyDepositAction(int peasantId) {
+        Peasant peasant = this.peasants.get(peasantId);
+        if (peasant.carryingGold()) {
+            this.currGold += peasant.getCurrGold();
+            peasant.setCurrGold(0);
+        } else {
+            this.currWood += peasant.getCurrWood();
+            peasant.setCurrWood(0);
+        }
+    }
+
+    public void applyHarvestAction(int peasantId, int resourceId) {
+        Resource resource = this.resources.get(resourceId);
+        Peasant peasant = this.peasants.get(peasantId);
+        if (resource.isGold()) {
+            peasant.setCurrGold(Math.min(100, resource.getAmount()));
+        } else {
+            peasant.setCurrWood(Math.min(100, resource.getAmount()));
+        }
+        resource.setAmountLeft(Math.max(0, resource.getAmount() - 100));
+    }
+
+    public void update(StripsAction action) {
+        plan.add(action);
+        this.cost += action.getCost();
+    }
+
     /**
      * Write your heuristic function here. Remember this must be admissible for the properties of A* to hold. If you
      * can come up with an easy way of computing a consistent heuristic that is even better, but not strictly necessary.

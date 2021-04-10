@@ -22,6 +22,10 @@ public class Peasant {
         return this.numGold > 0 || this.numWood > 0;
     }
 
+    public boolean carryingGold() {
+        return numGold > 0;
+    }
+
     public int getCurrGold() {
         return numGold;
     }
