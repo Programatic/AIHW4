@@ -4,7 +4,9 @@ import edu.cwru.sepia.agent.planner.actions.DepositAction;
 import edu.cwru.sepia.agent.planner.actions.HarvestAction;
 import edu.cwru.sepia.agent.planner.actions.MoveAction;
 import edu.cwru.sepia.agent.planner.resources.Resource;
+import edu.cwru.sepia.environment.model.state.ResourceNode;
 import edu.cwru.sepia.environment.model.state.State;
+import edu.cwru.sepia.environment.model.state.Unit;
 
 import javax.swing.plaf.basic.BasicInternalFrameTitlePane;
 import java.util.ArrayList;
@@ -46,9 +48,10 @@ import java.util.Map;
 public class GameState implements Comparable<GameState> {
     private static int REQUIRED_GOLD, REQUIRED_WOOD;
     private static boolean BUILD_PEASANTS;
+    public static Position TOWN_HALL_POSITION;
+    public static int TOWN_HALL_ID;
     private static final int BUILD_PEASANT_GOLD = 400, BUILD_PEASANT_FOOD = 1, TOWNHALL_FOOD = 3;
 
-    private Position townhall_position;
 
     private Map<Integer, Peasant> peasants = new HashMap<>(TOWNHALL_FOOD);
     private Map<Integer, Resource> resources = new HashMap<>();
@@ -70,6 +73,23 @@ public class GameState implements Comparable<GameState> {
         REQUIRED_GOLD = requiredGold;
         REQUIRED_WOOD = requiredWood;
         BUILD_PEASANTS = buildPeasants;
+
+        for (ResourceNode.ResourceView resource : state.getAllResourceNodes()) {
+            Position pos = new Position(resource.getXPosition(), resource.getYPosition());
+            Resource res = new Resource(resource.getID(), resource.getAmountRemaining(), pos, resource.getType());
+            this.resources.put(resource.getID(), res);
+        }
+
+        for (Unit.UnitView unit : state.getAllUnits()) {
+            Position pos = new Position(unit.getXPosition(), unit.getYPosition());
+            if (unit.getTemplateView().getName().equalsIgnoreCase("townhall")) {
+                TOWN_HALL_ID = unit.getID();
+                TOWN_HALL_POSITION = pos;
+            } else {
+                Peasant peasant = new Peasant(unit.getID(), pos);
+                this.peasants.put(unit.getID(), peasant);
+            }
+        }
     }
 
     public GameState(GameState state) {
