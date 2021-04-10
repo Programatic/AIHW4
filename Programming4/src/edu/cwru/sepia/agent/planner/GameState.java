@@ -93,7 +93,9 @@ public class GameState implements Comparable<GameState> {
     }
 
     public GameState(GameState state) {
-
+        this.currGold = state.currGold;
+        this.currWood = state.currWood;
+        this.currFood = state.currFood;
     }
 
     /**
