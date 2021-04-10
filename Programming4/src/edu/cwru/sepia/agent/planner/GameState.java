@@ -219,6 +219,19 @@ public class GameState implements Comparable<GameState> {
         return this.cost;
     }
 
+    public boolean canBuild() {
+        return currGold >= BUILD_GOLD_NEEDED && currFood > 0;
+    }
+
+    private Resource getResourceAt(Position position) {
+        for (Resource resource : this.resources.values()) {
+            if (resource.getPosition().equals(position))
+                return resource;
+        }
+
+        return null;
+    }
+
     /**
      * This is necessary to use your state in the Java priority queue. See the official priority queue and Comparable
      * interface documentation to learn how this function should work.
