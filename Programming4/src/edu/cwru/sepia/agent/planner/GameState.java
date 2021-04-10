@@ -124,16 +124,8 @@ public class GameState implements Comparable<GameState> {
         return false;
     }
 
-    private boolean canBuild() {
-        return this.currGold >= BUILD_GOlD_NEEDED && currFood >= 0;
-    }
-
     private boolean canHarvestNow(Peasant peasant) {
         return true;
-    }
-
-    private Resource getResourceAt(Position position) {
-        return null;
     }
 
     /**
@@ -220,7 +212,7 @@ public class GameState implements Comparable<GameState> {
     }
 
     public boolean canBuild() {
-        return currGold >= BUILD_GOLD_NEEDED && currFood > 0;
+        return currGold >= BUILD_GOlD_NEEDED && currFood > 0;
     }
 
     private Resource getResourceAt(Position position) {
@@ -236,7 +228,6 @@ public class GameState implements Comparable<GameState> {
      * This is necessary to use your state in the Java priority queue. See the official priority queue and Comparable
      * interface documentation to learn how this function should work.
      *
-     * @param o The other game state to compare
      * @return 1 if this state costs more than the other, 0 if equal, -1 otherwise
      */
     @Override
