@@ -51,7 +51,7 @@ public class GameState implements Comparable<GameState> {
     private static boolean BUILD_PEASANTS;
     public static Position TOWN_HALL_POSITION;
     public static int TOWN_HALL_ID;
-    private static final int BUILD_GOlD_NEEDED = 400, BUILD_PEASANT_FOOD = 1, TOWNHALL_FOOD = 3;
+    private static final int BUILD_GOlD_NEEDED = 400;
 
     private int currGold = 0, currWood = 0, currFood = 2, nextId;
 
@@ -128,7 +128,7 @@ public class GameState implements Comparable<GameState> {
     }
 
     private boolean canBuild() {
-        return this.currGold >= BUILD_PEASANT_GOLD && currFood >= BUILD_PEASANT_FOOD;
+        return this.currGold >= BUILD_GOlD_NEEDED && currFood >= 0;
     }
 
     private boolean canHarvestNow(Peasant peasant) {
@@ -150,7 +150,7 @@ public class GameState implements Comparable<GameState> {
 
         GameState next_state = new GameState(this);
 
-        if (buildPeasants && this.canBuild()) {
+        if (BUILD_PEASANTS && this.canBuild()) {
             // TODO: Build action
         }
 
