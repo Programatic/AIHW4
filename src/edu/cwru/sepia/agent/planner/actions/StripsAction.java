@@ -24,13 +24,7 @@ public interface StripsAction {
      * @param state State to apply action to
      * @return State resulting from successful action application.
      */
-    public default GameState apply(GameState state) {
-    	applyAction(state);
-    	state.updatePlanAndCost(this);
-    	return state;
-    }
-
-	public void applyAction(GameState state);
+    public GameState apply(GameState state);
 
     public default boolean isDirectedAction() {
 		return false;

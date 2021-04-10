@@ -19,8 +19,10 @@ public class BuildAction implements StripsAction {
 	}
 
 	@Override
-	public void applyAction(GameState state) {
+	public GameState apply(GameState state) {
 		state.applyBuildAction();
+		state.updatePlanAndCost(this);
+		return state;
 	}
 
 	@Override
