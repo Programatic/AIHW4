@@ -10,7 +10,6 @@ import edu.cwru.sepia.agent.planner.actions.DepositAction;
 import edu.cwru.sepia.agent.planner.actions.HarvestAction;
 import edu.cwru.sepia.agent.planner.actions.MoveAction;
 import edu.cwru.sepia.agent.planner.actions.StripsAction;
-import edu.cwru.sepia.agent.planner.resources.Resource;
 import edu.cwru.sepia.environment.model.state.ResourceNode;
 import edu.cwru.sepia.environment.model.state.State;
 import edu.cwru.sepia.environment.model.state.Unit;
@@ -227,7 +226,7 @@ public class GameState implements Comparable<GameState> {
 
     public void applyDepositAction(int peasantId) {
         Peasant peasant = this.peasants.get(peasantId);
-        if (peasant.hasGold()) {
+        if (peasant.carryingGold()) {
             this.currGold += peasant.getNumGold();
             peasant.setNumGold(0);
         } else {
@@ -236,7 +235,7 @@ public class GameState implements Comparable<GameState> {
         }
     }
 
-    public void updatePlanAndCost(StripsAction action) {
+    public void update(StripsAction action) {
         plan.add(action);
         this.cost += action.getCost();
     }

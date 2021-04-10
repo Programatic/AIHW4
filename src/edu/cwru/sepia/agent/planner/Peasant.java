@@ -49,7 +49,7 @@ public class Peasant {
 			this.numWood = numWood;
 		}
 		
-		public boolean hasGold() {
+		public boolean carryingGold() {
 			return numGold > 0;
 		}
 		
@@ -58,7 +58,7 @@ public class Peasant {
 		}
 		
 		public boolean hasResource() {
-			return hasGold() || hasWood();
+			return carryingGold() || hasWood();
 		}
 		
 		@Override

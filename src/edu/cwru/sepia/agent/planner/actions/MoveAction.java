@@ -23,7 +23,7 @@ public class MoveAction implements StripsAction {
 	@Override
 	public GameState apply(GameState state) {
 		state.applyMoveAction(peasant.getId(), destination);
-		state.updatePlanAndCost(this);
+		state.update(this);
 		return state;
 	}
 
