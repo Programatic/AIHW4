@@ -51,17 +51,14 @@ public class GameState implements Comparable<GameState> {
     private static boolean BUILD_PEASANTS;
     public static Position TOWN_HALL_POSITION;
     public static int TOWN_HALL_ID;
-    private static final int BUILD_PEASANT_GOLD = 400, BUILD_PEASANT_FOOD = 1, TOWNHALL_FOOD = 3;
-
-
-    private Map<Integer, Peasant> peasants = new HashMap<>(TOWNHALL_FOOD);
-    private Map<Integer, Resource> resources = new HashMap<>();
+    private static final int BUILD_GOlD_NEEDED = 400, BUILD_PEASANT_FOOD = 1, TOWNHALL_FOOD = 3;
 
     private int currGold = 0, currWood = 0, currFood = 2, nextId;
-    private boolean buildPeasants;
 
-    private double cost = 0;
+    private double cost = 0, heuristic;
 
+    private Map<Integer, Peasant> peasants = new HashMap<Integer, Peasant>(3);
+    private Map<Integer, Resource> resources = new HashMap<Integer, Resource>(7);
     private List<StripsAction> plan = new ArrayList<StripsAction>();
 
     /**
