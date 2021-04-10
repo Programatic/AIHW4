@@ -18,332 +18,292 @@ import edu.cwru.sepia.environment.model.state.State;
 import edu.cwru.sepia.environment.model.state.Unit;
 
 /**
- * 
  * @author Sarah Whelan
  */
 public class GameState implements Comparable<GameState> {
-	public static int PEASANT_TEMPLATE_ID;
-	public static Position TOWN_HALL_POSITION;
-	public static final String TOWNHALL_NAME = "townhall";
-	public static int TOWN_HALL_ID;
-	
-	private static final String GOLD_RESOURCE_NAME = "GOLD_MINE";
-	private static final int RESOURCE_AMOUNT_TO_TAKE = 100; // Unit-less amount of resource
-	private static final int BUILD_PESANT_OFFSET = 20000; // Unit-less
-	private static final int REQUIRED_GOLD_TO_BUILD = 400; // in Gold amount
-	private static final int MAX_NUM_PEASANTS = 3;
-	private static int requiredGold;
-	private static int requiredWood;
-	private static boolean buildPeasants;
-	
-	private static Set<Position> resourcePositions = new HashSet<Position>();
+    public static Position TOWN_HALL_POSITION;
+    public static int TOWN_HALL_ID;
 
-	private int currGold = 0, currWood = 0;
+    private static final int BUILD_PESANT_OFFSET = 20000; // Unit-less
+    private static final int REQUIRED_GOLD_TO_BUILD = 400; // in Gold amount
+    private static final int MAX_NUM_PEASANTS = 3;
+    private static int REQUIRED_GOLD, REQUIRED_WOOD;
+    private static boolean BUILD_PEASANTS;
 
-	private int nextId = 0;
-	
-	private double cost = 0;
-	private double heuristic = 0;
+    private static Set<Position> resourcePositions = new HashSet<Position>();
 
-	private Map<Integer, Peasant> peasants = new HashMap<Integer, Peasant>(3);
-	private Map<Integer, Resource> resources = new HashMap<Integer, Resource>(7);
-	private List<StripsAction> plan = new ArrayList<StripsAction>(300);
+    private int currGold = 0, currWood = 0, nextId;
 
-	/**
-	 * 
-	 * @param state The current stateview at the time the plan is being created
-	 * @param playernum The player number of agent that is planning
-	 * @param requiredGold The goal amount of gold (e.g. 200 for the small scenario)
-	 * @param requiredWood The goal amount of wood (e.g. 200 for the small scenario)
-	 * @param buildPeasants True if the BuildPeasant action should be considered
-	 */
-	public GameState(State.StateView state, int playernum, int requiredGold, int requiredWood, boolean buildPeasants) {
-		GameState.requiredGold = requiredGold;
-		GameState.requiredWood = requiredWood;
-		GameState.buildPeasants = buildPeasants;
+    private double cost = 0, heuristic;
 
-		for (ResourceNode.ResourceView resource : state.getAllResourceNodes()) {
-			Position pos = new Position(resource.getXPosition(), resource.getYPosition());
-			resourcePositions.add(pos);
-			Resource res = new Resource(resource.getID(), resource.getAmountRemaining(), pos, resource.getType());
-			this.resources.put(resource.getID(), res);
-		}
+    private Map<Integer, Peasant> peasants = new HashMap<Integer, Peasant>(3);
+    private Map<Integer, Resource> resources = new HashMap<Integer, Resource>(7);
+    private List<StripsAction> plan = new ArrayList<StripsAction>(300);
 
-		for (Unit.UnitView unit : state.getAllUnits()) {
-			Position pos = new Position(unit.getXPosition(), unit.getYPosition());
-			if (unit.getTemplateView().getName().equalsIgnoreCase("townhall"))  {
-				TOWN_HALL_ID = unit.getID();
-				TOWN_HALL_POSITION = pos;
-			} else {
-				Peasant peasant = new Peasant(unit.getID(), pos);
-				this.peasants.put(unit.getID(), peasant);
-			}
-		}
-	}
+    /**
+     * @param state         The current stateview at the time the plan is being created
+     * @param playernum     The player number of agent that is planning
+     * @param requiredGold  The goal amount of gold (e.g. 200 for the small scenario)
+     * @param requiredWood  The goal amount of wood (e.g. 200 for the small scenario)
+     * @param buildPeasants True if the BuildPeasant action should be considered
+     */
+    public GameState(State.StateView state, int playernum, int requiredGold, int requiredWood, boolean buildPeasants) {
+        GameState.REQUIRED_GOLD = requiredGold;
+        GameState.REQUIRED_WOOD = requiredWood;
+        GameState.BUILD_PEASANTS = buildPeasants;
 
-	public GameState(GameState state) {
-		this.currGold = state.currGold;
-		this.currWood = state.currWood;
-		this.nextId = state.nextId;
-		this.cost = state.cost;
+        for (ResourceNode.ResourceView resource : state.getAllResourceNodes()) {
+            Position pos = new Position(resource.getXPosition(), resource.getYPosition());
+            resourcePositions.add(pos);
+            Resource res = new Resource(resource.getID(), resource.getAmountRemaining(), pos, resource.getType());
+            this.resources.put(resource.getID(), res);
+        }
 
-		for (Peasant peasant : state.peasants.values()) {
-			Peasant copy = new Peasant(peasant);
-			this.peasants.put(copy.getId(), copy);
-		}
+        for (Unit.UnitView unit : state.getAllUnits()) {
+            Position pos = new Position(unit.getXPosition(), unit.getYPosition());
+            if (unit.getTemplateView().getName().equalsIgnoreCase("townhall")) {
+                TOWN_HALL_ID = unit.getID();
+                TOWN_HALL_POSITION = pos;
+            } else {
+                Peasant peasant = new Peasant(unit.getID(), pos);
+                this.peasants.put(unit.getID(), peasant);
+            }
+        }
+    }
 
-		for (Resource resource : state.resources.values()) {
-			Resource copy = new Resource(resource);
-			this.resources.put(resource.getID(), copy);
-		};
+    public GameState(GameState state) {
+        this.currGold = state.currGold;
+        this.currWood = state.currWood;
+        this.nextId = state.nextId;
+        this.cost = state.cost;
 
-		plan.addAll(state.plan);
-	}
+        for (Peasant peasant : state.peasants.values()) {
+            Peasant copy = new Peasant(peasant);
+            this.peasants.put(copy.getId(), copy);
+        }
 
-	private Peasant getPeasantWithId(int peasantId) {
-		return this.peasants.get(peasantId);
-	}
+        for (Resource resource : state.resources.values()) {
+            Resource copy = new Resource(resource);
+            this.resources.put(resource.getID(), copy);
+        }
+        ;
 
-	private Resource getResourceWithId(int resourceId) {
-		return this.resources.get(resourceId);
-	}
+        plan.addAll(state.plan);
+    }
 
-	private boolean peasantCanHarvest(Peasant peasant) {
-		return isResourceLocation(peasant.getPosition()) && getResourceForPosition(peasant.getPosition()).hasRemaining();
-	}
-	
-	/**
-	 * Be sure there is a resource there first.
-	 * @param position
-	 * @return
-	 */
-	private Resource getResourceForPosition(Position position) {
-		return this.resources.values().stream().filter(e -> e.getPosition().equals(position)).findFirst().get();
-	}
+    private boolean peasantCanHarvest(Peasant peasant) {
+        return getResourceAt(peasant.getPosition()) != null && getResourceAt(peasant.getPosition()).hasRemaining();
+    }
 
-	private boolean isResourceLocation(Position destination) { 
-		return GameState.resourcePositions.contains(destination);
-	}
-	
-	private void addToObtainedWood(int numWood) {
-		this.currWood += numWood;
-	}
+    public Stack<StripsAction> getPlan() {
+        Stack<StripsAction> plan = new Stack<StripsAction>();
+        for (int i = this.plan.size() - 1; i > -1; i--) {
+            plan.push(this.plan.get(i));
+        }
+        return plan;
+    }
 
-	private void addToObtainedGold(int numGold) {
-		this.currGold += numGold;
-	}
+    /**
+     * @return true if the goal conditions are met in this instance of game state.
+     */
+    public boolean isGoal() {
+        return currGold >= REQUIRED_GOLD && currWood >= REQUIRED_WOOD;
+    }
 
-	public Stack<StripsAction> getPlan() {
-		Stack<StripsAction> plan = new Stack<StripsAction>();
-		for(int i = this.plan.size() - 1; i > -1; i--) {
-			plan.push(this.plan.get(i));
-		}
-		return plan;
-	}
+    /**
+     * Adds for the amount of resources still needing to be collected.
+     * Adds for not having peasants
+     * Adds for not being near resources if not holding anything
+     * Adds for not being near town all if holding something
+     * Subtracts for if you can make peasants or if you are next to a resource and not holding anything
+     *
+     * @return The value estimated remaining cost to reach a goal state from this state.
+     */
+    public double heuristic() {
+        if (this.heuristic != 0) {
+            return heuristic;
+        }
 
-	/**
-	 *
-	 * @return true if the goal conditions are met in this instance of game state.
-	 */
-	public boolean isGoal() {
-		return currGold >= requiredGold && currWood >= requiredWood;
-	}
+        if (currWood > currGold) {
+            this.heuristic += 100;
+        }
+        if (currGold <= REQUIRED_GOLD) {
+            this.heuristic += (REQUIRED_GOLD - currGold);
+        } else {
+            this.heuristic += (currGold - REQUIRED_GOLD);
+        }
+        if (currWood <= REQUIRED_WOOD) {
+            this.heuristic += (REQUIRED_WOOD - currWood);
+        } else {
+            this.heuristic += currWood - REQUIRED_WOOD;
+        }
+        if (BUILD_PEASANTS) {
+            this.heuristic += (MAX_NUM_PEASANTS - this.peasants.size()) * BUILD_PESANT_OFFSET;
+            if (canBuild()) {
+                this.heuristic -= BUILD_PESANT_OFFSET;
+            }
+        }
 
-	/**
-	 * Adds for the amount of resources still needing to be collected.
-	 * Adds for not having peasants
-	 * Adds for not being near resources if not holding anything
-	 * Adds for not being near town all if holding something
-	 * Subtracts for if you can make peasants or if you are next to a resource and not holding anything
-	 * 
-	 * @return The value estimated remaining cost to reach a goal state from this state.
-	 */
-	public double heuristic() {
-		if(this.heuristic != 0) {
-			return heuristic;
-		}
-		
-		if(currWood > currGold) {
-			this.heuristic += 100;
-		}
-		if(currGold <= requiredGold) {
-			this.heuristic += (requiredGold - currGold);
-		} else {
-			this.heuristic += (currGold - requiredGold);
-		}
-		if(currWood <= requiredWood) {
-			this.heuristic += (requiredWood - currWood);
-		} else {
-			this.heuristic += currWood - requiredWood;
-		}
-		if(buildPeasants) {
-			this.heuristic += (MAX_NUM_PEASANTS - this.peasants.size()) * BUILD_PESANT_OFFSET;
-			if(canBuild()){
-				this.heuristic -= BUILD_PESANT_OFFSET;
-			}
-		}
-		
-		for(Peasant peasant : this.peasants.values()) {
-			if(peasant.hasResource()) {
-				this.heuristic -= peasant.getNumGold() + peasant.getNumWood();
-			} else {
-				if(peasantCanHarvest(peasant)) {
-					this.heuristic -= 50;
-				} else if(!isResourceLocation(peasant.getPosition())) {
-					this.heuristic += 100;
-				}
-			}
-		}
-		
-		return this.heuristic;
-	}
+        for (Peasant peasant : this.peasants.values()) {
+            if (peasant.hasResource()) {
+                this.heuristic -= peasant.getNumGold() + peasant.getNumWood();
+            } else {
+                if (peasantCanHarvest(peasant)) {
+                    this.heuristic -= 50;
+                } else if (getResourceAt(peasant.getPosition()) == null) {
+                    this.heuristic += 100;
+                }
+            }
+        }
 
-	/**
-	 * Cost is updated every time a move is applied.
-	 *
-	 * @return The current cost to reach this goal
-	 */
-	public double getCost() {
-		return this.cost;
-	}
+        return this.heuristic;
+    }
 
-	public boolean canBuild() {
-		return currGold >= REQUIRED_GOLD_TO_BUILD && this.peasants.size() < MAX_NUM_PEASANTS;
-	}
+    /**
+     * Cost is updated every time a move is applied.
+     *
+     * @return The current cost to reach this goal
+     */
+    public double getCost() {
+        return this.cost;
+    }
 
-	private Resource getResourceAt(Position position) {
-		for (Resource resource : this.resources.values()) {
-			if (resource.getPosition().equals(position))
-				return resource;
-		}
+    public boolean canBuild() {
+        return currGold >= REQUIRED_GOLD_TO_BUILD && this.peasants.size() < MAX_NUM_PEASANTS;
+    }
 
-		return null;
-	}
+    private Resource getResourceAt(Position position) {
+        for (Resource resource : this.resources.values()) {
+            if (resource.getPosition().equals(position))
+                return resource;
+        }
 
-	public List<GameState> generateChildren() {
-		List<GameState> children = new ArrayList<>();
+        return null;
+    }
 
-		GameState child = new GameState(this);
+    public List<GameState> generateChildren() {
+        List<GameState> children = new ArrayList<>();
 
-		if (buildPeasants && this.canBuild()) {
-			// TODO: Build action
-		}
+        GameState child = new GameState(this);
 
-		Resource res;
-		for(Peasant peasant : this.peasants.values()) {
-			if(peasant.hasResource()) {
-				if (peasant.getPosition().isAdjacent(TOWN_HALL_POSITION)) {
-					DepositAction action = new DepositAction(peasant);
-					if (action.preconditionsMet(child))
-						action.apply(child);
-				} else {
-					MoveAction action = new MoveAction(peasant, TOWN_HALL_POSITION);
-					if (action.preconditionsMet(child))
-						action.apply(child);
-				}
-			} else if ((res = getResourceAt(peasant.getPosition())) != null) {
-				HarvestAction action = new HarvestAction(peasant, res);
-				if (action.preconditionsMet(child))
-					action.apply(child);
-			} else {
-				for(Resource resource : this.resources.values()) {
-					GameState innerChild = new GameState(child);
-					MoveAction action = new MoveAction(peasant, resource.getPosition());
-					if(action.preconditionsMet(innerChild)) {
-						action.apply(innerChild);
-					}
+        if (BUILD_PEASANTS && this.canBuild()) {
+            // TODO: Build action
+        }
 
-					children.add(innerChild);
-				}
-			}
-		}
-		children.add(child);
+        Resource res;
+        for (Peasant peasant : this.peasants.values()) {
+            if (peasant.hasResource()) {
+                if (peasant.getPosition().isAdjacent(TOWN_HALL_POSITION)) {
+                    DepositAction action = new DepositAction(peasant);
+                    if (action.preconditionsMet(child))
+                        action.apply(child);
+                } else {
+                    MoveAction action = new MoveAction(peasant, TOWN_HALL_POSITION);
+                    if (action.preconditionsMet(child))
+                        action.apply(child);
+                }
+            } else if ((res = getResourceAt(peasant.getPosition())) != null) {
+                HarvestAction action = new HarvestAction(peasant, res);
+                if (action.preconditionsMet(child))
+                    action.apply(child);
+            } else {
+                for (Resource resource : this.resources.values()) {
+                    GameState innerChild = new GameState(child);
+                    MoveAction action = new MoveAction(peasant, resource.getPosition());
+                    if (action.preconditionsMet(innerChild)) {
+                        action.apply(innerChild);
+                    }
 
-		return children;
-	}
+                    children.add(innerChild);
+                }
+            }
+        }
+        children.add(child);
 
-	public void applyBuildAction(StripsAction action) {
-		this.currGold = this.currGold - REQUIRED_GOLD_TO_BUILD;
-		Peasant peasant = new Peasant(nextId, new Position(TOWN_HALL_POSITION));
-		nextId++;
-		this.peasants.put(peasant.getId(), peasant);
-	}
+        return children;
+    }
 
-	public void applyMoveAction(StripsAction action, int peasantId, Position destination) {
-		getPeasantWithId(peasantId).setPosition(destination);
-	}
+    public void applyBuildAction(StripsAction action) {
+        this.currGold = this.currGold - REQUIRED_GOLD_TO_BUILD;
+        Peasant peasant = new Peasant(nextId, new Position(TOWN_HALL_POSITION));
+        nextId++;
+        this.peasants.put(peasant.getId(), peasant);
+    }
 
-	public void applyHarvestAction(StripsAction action, int peasantId, int resourceId) {
-		Resource resource = getResourceWithId(resourceId);
-		Peasant peasant = getPeasantWithId(peasantId);
-		if(resource.isGold()) {
-			peasant.setNumGold(Math.min(100, resource.getAmountLeft()));
-			resource.setAmountLeft(Math.max(0, resource.getAmountLeft() - 100));
-		} else {
-			peasant.setNumWood(Math.min(100, resource.getAmountLeft()));
-			resource.setAmountLeft(Math.max(0, resource.getAmountLeft() - 100));
-		}
-	}
+    public void applyMoveAction(StripsAction action, int peasantId, Position destination) {
+        this.peasants.get(peasantId).setPosition(destination);
+    }
 
-	public void applyDepositAction(StripsAction action, int peasantId) {
-		Peasant peasant = getPeasantWithId(peasantId);
-		if(peasant.hasGold()) {
-			addToObtainedGold(peasant.getNumGold());
-			peasant.setNumGold(0);
-		} else {
-			addToObtainedWood(peasant.getNumWood());
-			peasant.setNumWood(0);
-		}
-	}
-	
-	public void updatePlanAndCost(StripsAction action) {
-		plan.add(action);
-		this.cost += action.getCost();
-	}
+    public void applyHarvestAction(StripsAction action, int peasantId, int resourceId) {
+        Resource resource = this.resources.get(resourceId);
+        Peasant peasant = this.peasants.get(peasantId);
+        if (resource.isGold()) {
+            peasant.setNumGold(Math.min(100, resource.getAmountLeft()));
+            resource.setAmountLeft(Math.max(0, resource.getAmountLeft() - 100));
+        } else {
+            peasant.setNumWood(Math.min(100, resource.getAmountLeft()));
+            resource.setAmountLeft(Math.max(0, resource.getAmountLeft() - 100));
+        }
+    }
 
-	/**
-	 *
-	 * @param o The other game state to compare
-	 * @return 1 if this state costs more than the other, 0 if equal, -1 otherwise
-	 */
-	@Override
-	public int compareTo(GameState o) {
-		if(this.heuristic() > o.heuristic()){
-			return 1;
-		} else if(this.heuristic() < o.heuristic()){
-			return -1;
-		}
-		return 0;
-	}
+    public void applyDepositAction(StripsAction action, int peasantId) {
+        Peasant peasant = this.peasants.get(peasantId);
+        if (peasant.hasGold()) {
+            this.currGold += peasant.getNumGold();
+            peasant.setNumGold(0);
+        } else {
+            this.currWood += peasant.getNumWood();
+            peasant.setNumWood(0);
+        }
+    }
 
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + currGold;
-		result = prime * result + currWood;
-		result = prime * result + ((peasants == null) ? 0 : peasants.hashCode());
-		return result;
-	}
+    public void updatePlanAndCost(StripsAction action) {
+        plan.add(action);
+        this.cost += action.getCost();
+    }
 
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		GameState other = (GameState) obj;
-		if (currGold != other.currGold)
-			return false;
-		if (currWood != other.currWood)
-			return false;
-		if (peasants == null) {
-			if (other.peasants != null)
-				return false;
-		} else if (!peasants.equals(other.peasants))
-			return false;
-		return true;
-	}
+    /**
+     * @param o The other game state to compare
+     * @return 1 if this state costs more than the other, 0 if equal, -1 otherwise
+     */
+    @Override
+    public int compareTo(GameState o) {
+        if (this.heuristic() > o.heuristic()) {
+            return 1;
+        } else if (this.heuristic() < o.heuristic()) {
+            return -1;
+        }
+        return 0;
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + currGold;
+        result = prime * result + currWood;
+        result = prime * result + ((peasants == null) ? 0 : peasants.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        GameState other = (GameState) obj;
+        if (currGold != other.currGold)
+            return false;
+        if (currWood != other.currWood)
+            return false;
+        if (peasants == null) {
+            if (other.peasants != null)
+                return false;
+        } else if (!peasants.equals(other.peasants))
+            return false;
+        return true;
+    }
 }
