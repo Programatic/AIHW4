@@ -30,6 +30,10 @@ public class Peasant {
         this.currWood = currWood;
     }
 
+    public int getId() {
+        return id;
+    }
+
     public Position getPosition() {
         return position;
     }

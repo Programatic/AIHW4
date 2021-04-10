@@ -3,6 +3,7 @@ package edu.cwru.sepia.agent.planner;
 import edu.cwru.sepia.agent.planner.actions.DepositAction;
 import edu.cwru.sepia.agent.planner.actions.HarvestAction;
 import edu.cwru.sepia.agent.planner.actions.MoveAction;
+import edu.cwru.sepia.agent.planner.actions.StripsAction;
 import edu.cwru.sepia.agent.planner.resources.Resource;
 import edu.cwru.sepia.environment.model.state.ResourceNode;
 import edu.cwru.sepia.environment.model.state.State;
@@ -56,8 +57,12 @@ public class GameState implements Comparable<GameState> {
     private Map<Integer, Peasant> peasants = new HashMap<>(TOWNHALL_FOOD);
     private Map<Integer, Resource> resources = new HashMap<>();
 
-    private int currGold, currWood, currFood;
+    private int currGold = 0, currWood = 0, currFood = 2, nextId;
     private boolean buildPeasants;
+
+    private double cost = 0;
+
+    private List<StripsAction> plan = new ArrayList<StripsAction>();
 
     /**
      * Construct a GameState from a stateview object. This is used to construct the initial search node. All other
@@ -96,6 +101,21 @@ public class GameState implements Comparable<GameState> {
         this.currGold = state.currGold;
         this.currWood = state.currWood;
         this.currFood = state.currFood;
+        this.nextId = state.nextId;
+        this.cost = state.cost;
+
+        for (Peasant peasant : state.peasants.values()) {
+            Peasant copy = new Peasant(peasant);
+            this.peasants.put(copy.getId(), copy);
+        }
+
+        for (Resource resource : state.resources.values()) {
+            Resource copy = new Resource(resource);
+            this.resources.put(resource.getID(), copy);
+        }
+        ;
+
+        plan.addAll(state.plan);
     }
 
     /**
