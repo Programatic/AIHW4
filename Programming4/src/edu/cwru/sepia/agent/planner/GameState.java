@@ -10,10 +10,7 @@ import edu.cwru.sepia.environment.model.state.State;
 import edu.cwru.sepia.environment.model.state.Unit;
 
 import javax.swing.plaf.basic.BasicInternalFrameTitlePane;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * This class is used to represent the state of the game after applying one of the avaiable actions. It will also
@@ -229,9 +226,8 @@ public class GameState implements Comparable<GameState> {
      * @return 1 if this state costs more than the other, 0 if equal, -1 otherwise
      */
     @Override
-    public int compareTo(GameState o) {
-        // TODO: Implement me!
-        return 0;
+    public int compareTo(GameState gameState) {
+        return Double.compare(this.heuristic(), gameState.heuristic());
     }
 
     /**
@@ -242,8 +238,10 @@ public class GameState implements Comparable<GameState> {
      */
     @Override
     public boolean equals(Object o) {
-        // TODO: Implement me!
-        return false;
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        GameState gameState = (GameState) o;
+        return currGold == gameState.currGold && currWood == gameState.currWood && currFood == gameState.currFood && peasants.equals(gameState.peasants);
     }
 
     /**
@@ -254,7 +252,6 @@ public class GameState implements Comparable<GameState> {
      */
     @Override
     public int hashCode() {
-        // TODO: Implement me!
-        return 0;
+        return Objects.hash(currGold, currWood, currFood, peasants);
     }
 }
