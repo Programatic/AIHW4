@@ -18,7 +18,7 @@ public class DepositAction implements StripsAction {
 
     @Override
     public boolean preconditionsMet(GameState state) {
-        return false;
+        return hasResource && peasantPos.equals(townHallPos);
     }
 
     @Override

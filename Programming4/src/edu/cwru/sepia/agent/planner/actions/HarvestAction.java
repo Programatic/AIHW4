@@ -22,7 +22,7 @@ public class HarvestAction implements StripsAction{
 
     @Override
     public boolean preconditionsMet(GameState state) {
-        return false;
+        return hasResource && !peasant.isCarrying() && peasantPos.equals(resourcePos);
     }
 
     @Override

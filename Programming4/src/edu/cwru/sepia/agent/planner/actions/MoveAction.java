@@ -15,7 +15,7 @@ public class MoveAction implements StripsAction {
 
     @Override
     public boolean preconditionsMet(GameState state) {
-        return false;
+        return !peasant.getPosition().equals(goalPosition);
     }
 
     @Override
