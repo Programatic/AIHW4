@@ -202,8 +202,26 @@ public class GameState implements Comparable<GameState> {
      * @return The value estimated remaining cost to reach a goal state from this state.
      */
     public double heuristic() {
-        // TODO: Implement me!
-        return 0.0;
+        if (this.heuristic > 0) {
+            return heuristic;
+        }
+
+        if (currGold <= REQUIRED_GOLD) {
+            this.heuristic += (REQUIRED_GOLD - currGold);
+        }
+
+        if (currWood <= REQUIRED_WOOD) {
+            this.heuristic += (REQUIRED_WOOD - currWood);
+        }
+
+        if (BUILD_PEASANTS) {
+            this.heuristic += currFood * 5000;
+        }
+
+        if (this.isGoal())
+            this.heuristic = Double.MAX_VALUE;
+
+        return this.heuristic;
     }
 
     /**
@@ -214,8 +232,7 @@ public class GameState implements Comparable<GameState> {
      * @return The current cost to reach this goal
      */
     public double getCost() {
-        // TODO: Implement me!
-        return 0.0;
+        return this.cost;
     }
 
     /**
