@@ -16,6 +16,13 @@ public class Resource {
       this.id = id;
    }
 
+   public Resource(Resource resource) {
+      this.position = new Position(resource.position);
+      this.amount = resource.amount;
+      this.type = resource.type;
+      this.id = resource.id;
+   }
+
    public int getID() {
       return id;
    }

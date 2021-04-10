@@ -3,31 +3,39 @@ package edu.cwru.sepia.agent.planner;
 public class Peasant {
     private int id;
     private Position position;
-    private int currGold, currWood;
+    private int numGold = 0;
+    private int numWood = 0;
 
     public Peasant(int id, Position position) {
         this.id = id;
         this.position = position;
     }
 
+    public Peasant(Peasant value) {
+        this.id = value.id;
+        this.position = new Position(value.position);
+        this.numGold = value.numGold;
+        this.numWood = value.numWood;
+    }
+
     public boolean isCarrying() {
-        return this.currGold > 0 || this.currWood > 0;
+        return this.numGold > 0 || this.numWood > 0;
     }
 
     public int getCurrGold() {
-        return currGold;
+        return numGold;
     }
 
     public void setCurrGold(int currGold) {
-        this.currGold = currGold;
+        this.numGold = currGold;
     }
 
     public int getCurrWood() {
-        return currWood;
+        return numWood;
     }
 
     public void setCurrWood(int currWood) {
-        this.currWood = currWood;
+        this.numWood = currWood;
     }
 
     public int getId() {
