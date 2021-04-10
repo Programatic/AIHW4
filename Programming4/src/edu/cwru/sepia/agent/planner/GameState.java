@@ -213,9 +213,8 @@ public class GameState implements Comparable<GameState> {
      * @return 1 if this state costs more than the other, 0 if equal, -1 otherwise
      */
     @Override
-    public int compareTo(GameState o) {
-        // TODO: Implement me!
-        return 0;
+    public int compareTo(GameState gameState) {
+        return Double.compare(this.heuristic(), gameState.heuristic());
     }
 
     /**
