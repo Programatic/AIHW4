@@ -95,6 +95,21 @@ public class PlannerAgent extends Agent {
         return null;
     }
 
+    private void updateCost(Set<GameState> open, PriorityQueue<GameState> search, GameState gs) {
+        for (GameState cand : open) {
+            if (cand.equals(gs)) {
+                if (gs.getCost() < cand.heuristic()) {
+                    open.remove(cand);
+                    search.remove(cand);
+
+                    open.add(gs);
+                    search.add(gs);
+
+                    return;
+                }
+            }
+        }
+    }
     /**
      * This has been provided for you. Each strips action is converted to a string with the toString method. This means
      * each class implementing the StripsAction interface should override toString. Your strips actions should have a
