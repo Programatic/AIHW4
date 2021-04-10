@@ -42,4 +42,6 @@ public interface StripsAction {
     public int getPeasantID();
 
     public Position getPosition();
+
+    public double getCost();
 }

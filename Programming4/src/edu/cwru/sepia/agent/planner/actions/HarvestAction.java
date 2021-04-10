@@ -3,7 +3,7 @@ package edu.cwru.sepia.agent.planner.actions;
 import edu.cwru.sepia.agent.planner.GameState;
 import edu.cwru.sepia.agent.planner.Peasant;
 import edu.cwru.sepia.agent.planner.Position;
-import edu.cwru.sepia.agent.planner.resources.Resource;
+import edu.cwru.sepia.agent.planner.Resource;
 
 public class HarvestAction implements StripsAction{
     private int resourceId, peasantID;
@@ -40,6 +40,11 @@ public class HarvestAction implements StripsAction{
     @Override
     public Position getPosition() {
         return this.resourcePos;
+    }
+
+    @Override
+    public double getCost() {
+        return 1;
     }
 
 
