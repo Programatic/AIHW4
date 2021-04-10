@@ -149,6 +149,8 @@ public class PEAgent extends Agent {
             return Action.createPrimitiveDeposit(peasant.getID(), d);
         }
 
+
+        // Action for building a new peasant, not yet needed but nice base case
         return Action.createPrimitiveProduction(townhallId, peasantTemplateId);
     }
 
