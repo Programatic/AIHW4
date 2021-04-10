@@ -191,6 +191,10 @@ public class GameState implements Comparable<GameState> {
         resource.setAmountLeft(Math.max(0, resource.getAmount() - 100));
     }
 
+    public void applyMoveAction(int peasantId, Position destination) {
+        this.peasants.get(peasantId).setPosition(destination);
+    }
+
     public void update(StripsAction action) {
         plan.add(action);
         this.cost += action.getCost();
