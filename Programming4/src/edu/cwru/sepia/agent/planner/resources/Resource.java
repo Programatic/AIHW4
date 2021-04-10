@@ -23,6 +23,10 @@ public class Resource {
       this.id = resource.id;
    }
 
+   public boolean hasRemaining() {
+      return amount > 0;
+   }
+
    public int getID() {
       return id;
    }
