@@ -37,7 +37,7 @@ public class Peasant {
 			return numGold;
 		}
 		
-		public void setNumGold(int numGold) {
+		public void setGold(int numGold) {
 			this.numGold = numGold;
 		}
 		
@@ -45,7 +45,7 @@ public class Peasant {
 			return numWood;
 		}
 		
-		public void setNumWood(int numWood) {
+		public void setWood(int numWood) {
 			this.numWood = numWood;
 		}
 		

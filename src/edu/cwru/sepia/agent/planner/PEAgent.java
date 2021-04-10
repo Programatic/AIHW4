@@ -38,19 +38,17 @@ public class PEAgent extends Agent {
             return actions;
         }
 
-        int previousTurnNumber = stateView.getTurnNumber() - 1;
+        int prevNum = stateView.getTurnNumber() - 1;
 
-        Map<Integer, ActionResult> previousActions = historyView.getCommandFeedback(playernum, previousTurnNumber);
+        Map<Integer, ActionResult> previousActions = historyView.getCommandFeedback(playernum, prevNum);
         while (!plan.empty()) {
-            StripsAction top = plan.peek();
-            ActionResult previous = previousActions.get(top.getUnitId());
-            if (lastActionFailed(previous)) {
-                actions.put(previous.getAction().getUnitId(), previous.getAction());
-            }
-            if (!peasantAvailable(actions, top, previous)) {
+            StripsAction action = plan.peek();
+            ActionResult previousAction = previousActions.get(action.getUnitId());
+
+            if (!peasantAvailable(actions, action, previousAction)) {
                 break;
             } else {
-                if (waitOnBuild(actions, top)) {
+                if (waitOnBuild(actions, action)) {
                     break;
                 } else {
                     addNextAction(actions, stateView);
@@ -58,10 +56,6 @@ public class PEAgent extends Agent {
             }
         }
         return actions;
-    }
-
-    private boolean lastActionFailed(ActionResult previous) {
-        return previous != null && previous.getFeedback() == ActionFeedback.FAILED;
     }
 
     private boolean peasantAvailable(Map<Integer, Action> actionMap, StripsAction next, ActionResult previous) {
