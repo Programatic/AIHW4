@@ -34,4 +34,16 @@ public class Resource {
    public Position getPosition() {
       return position;
    }
+
+   public int getAmount() {
+      return amount;
+   }
+
+   public void setAmountLeft(int amountLeft) {
+      this.amount = amountLeft;
+   }
+
+   public boolean isGold() {
+      return this.type == ResourceNode.Type.GOLD_MINE;
+   }
 }

@@ -188,6 +188,17 @@ public class GameState implements Comparable<GameState> {
         }
     }
 
+    public void applyHarvestAction(int peasantId, int resourceId) {
+        Resource resource = this.resources.get(resourceId);
+        Peasant peasant = this.peasants.get(peasantId);
+        if (resource.isGold()) {
+            peasant.setCurrGold(Math.min(100, resource.getAmount()));
+        } else {
+            peasant.setCurrWood(Math.min(100, resource.getAmount()));
+        }
+        resource.setAmountLeft(Math.max(0, resource.getAmount() - 100));
+    }
+
     public void update(StripsAction action) {
         plan.add(action);
         this.cost += action.getCost();
