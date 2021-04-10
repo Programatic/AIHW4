@@ -30,4 +30,13 @@ public class MoveAction implements StripsAction {
     public int getPeasantID() {
         return this.peasantID;
     }
+
+    @Override
+    public Position getPosition() {
+        return null;
+    }
+
+    public Position getGoalPosition() {
+        return goalPosition;
+    }
 }

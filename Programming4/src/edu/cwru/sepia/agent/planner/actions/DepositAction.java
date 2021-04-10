@@ -32,4 +32,9 @@ public class DepositAction implements StripsAction {
     public int getPeasantID() {
         return peasantId;
     }
+
+    @Override
+    public Position getPosition() {
+        return townHallPos;
+    }
 }

@@ -9,6 +9,7 @@ import edu.cwru.sepia.environment.model.state.ResourceType;
 import edu.cwru.sepia.environment.model.state.State;
 import edu.cwru.sepia.environment.model.state.Template;
 import edu.cwru.sepia.environment.model.state.Unit;
+import edu.cwru.sepia.util.Direction;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -93,6 +94,14 @@ public class PEAgent extends Agent {
             StripsAction action = plan.peek();
             ActionResult previousAction = prev.get(action.getPeasantID());
 
+            if (previousAction != null || actions.containsKey(action.getPeasantID()))
+                break;
+
+            if (!actions.containsKey(action.getPeasantID())) {
+                StripsAction a = plan.pop();
+                Action sepiaAction = createSepiaAction(a, stateView);
+                actions.put(sepiaAction.getUnitId(), sepiaAction);
+            }
         }
 
         return actions;
@@ -119,10 +128,28 @@ public class PEAgent extends Agent {
      * these actions are stored in a mapping between the peasant unit ID executing the action and the action you created.
      *
      * @param action StripsAction
+     * @param stateView
      * @return SEPIA representation of same action
      */
-    private Action createSepiaAction(StripsAction action) {
-        return null;
+    private Action createSepiaAction(StripsAction action, State.StateView stateView) {
+        Unit.UnitView peasant = stateView.getUnit(action.getPeasantID());
+        Position pos = new Position(peasant.getXPosition(), peasant.getYPosition());
+        Position dest = action.getPosition();
+        Direction d = null;
+
+        if (dest != null)
+            d = pos.getDirection(dest);
+
+
+        if (action instanceof MoveAction) {
+            return Action.createCompoundMove(action.getPeasantID(), ((MoveAction) action).getGoalPosition().x, ((MoveAction) action).getGoalPosition().y);
+        } else if (action instanceof HarvestAction) {
+            return Action.createPrimitiveGather(peasant.getID(), d);
+        } else if (action instanceof DepositAction) {
+            return Action.createPrimitiveDeposit(peasant.getID(), d);
+        }
+
+        return Action.createPrimitiveProduction(townhallId, peasantTemplateId);
     }
 
     @Override

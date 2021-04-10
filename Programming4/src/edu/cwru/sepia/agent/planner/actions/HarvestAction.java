@@ -37,5 +37,10 @@ public class HarvestAction implements StripsAction{
         return peasantID;
     }
 
+    @Override
+    public Position getPosition() {
+        return this.resourcePos;
+    }
+
 
 }
