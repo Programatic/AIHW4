@@ -2,10 +2,8 @@ package edu.cwru.sepia.agent.planner;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Stack;
 
 import edu.cwru.sepia.agent.planner.actions.DepositAction;
@@ -26,19 +24,16 @@ public class GameState implements Comparable<GameState> {
 
     private static final int BUILD_PESANT_OFFSET = 20000; // Unit-less
     private static final int REQUIRED_GOLD_TO_BUILD = 400; // in Gold amount
-    private static final int MAX_NUM_PEASANTS = 3;
     private static int REQUIRED_GOLD, REQUIRED_WOOD;
     private static boolean BUILD_PEASANTS;
 
-    private static Set<Position> resourcePositions = new HashSet<Position>();
-
-    private int currGold = 0, currWood = 0, nextId;
+    private int currGold = 0, currWood = 0, currFood = 2, nextId;
 
     private double cost = 0, heuristic;
 
     private Map<Integer, Peasant> peasants = new HashMap<Integer, Peasant>(3);
     private Map<Integer, Resource> resources = new HashMap<Integer, Resource>(7);
-    private List<StripsAction> plan = new ArrayList<StripsAction>(300);
+    private List<StripsAction> plan = new ArrayList<StripsAction>();
 
     /**
      * @param state         The current stateview at the time the plan is being created
@@ -54,7 +49,6 @@ public class GameState implements Comparable<GameState> {
 
         for (ResourceNode.ResourceView resource : state.getAllResourceNodes()) {
             Position pos = new Position(resource.getXPosition(), resource.getYPosition());
-            resourcePositions.add(pos);
             Resource res = new Resource(resource.getID(), resource.getAmountRemaining(), pos, resource.getType());
             this.resources.put(resource.getID(), res);
         }
@@ -74,6 +68,7 @@ public class GameState implements Comparable<GameState> {
     public GameState(GameState state) {
         this.currGold = state.currGold;
         this.currWood = state.currWood;
+        this.currFood = state.currFood;
         this.nextId = state.nextId;
         this.cost = state.cost;
 
@@ -91,8 +86,9 @@ public class GameState implements Comparable<GameState> {
         plan.addAll(state.plan);
     }
 
-    private boolean peasantCanHarvest(Peasant peasant) {
-        return getResourceAt(peasant.getPosition()) != null && getResourceAt(peasant.getPosition()).hasRemaining();
+    private boolean canHarvestNow(Peasant peasant) {
+        Resource resource = getResourceAt(peasant.getPosition());
+        return resource != null && resource.getAmount() > 0;
     }
 
     public Stack<StripsAction> getPlan() {
@@ -103,22 +99,10 @@ public class GameState implements Comparable<GameState> {
         return plan;
     }
 
-    /**
-     * @return true if the goal conditions are met in this instance of game state.
-     */
     public boolean isGoal() {
         return currGold >= REQUIRED_GOLD && currWood >= REQUIRED_WOOD;
     }
 
-    /**
-     * Adds for the amount of resources still needing to be collected.
-     * Adds for not having peasants
-     * Adds for not being near resources if not holding anything
-     * Adds for not being near town all if holding something
-     * Subtracts for if you can make peasants or if you are next to a resource and not holding anything
-     *
-     * @return The value estimated remaining cost to reach a goal state from this state.
-     */
     public double heuristic() {
         if (this.heuristic != 0) {
             return heuristic;
@@ -138,7 +122,7 @@ public class GameState implements Comparable<GameState> {
             this.heuristic += currWood - REQUIRED_WOOD;
         }
         if (BUILD_PEASANTS) {
-            this.heuristic += (MAX_NUM_PEASANTS - this.peasants.size()) * BUILD_PESANT_OFFSET;
+            this.heuristic += currFood * BUILD_PESANT_OFFSET;
             if (canBuild()) {
                 this.heuristic -= BUILD_PESANT_OFFSET;
             }
@@ -148,7 +132,7 @@ public class GameState implements Comparable<GameState> {
             if (peasant.hasResource()) {
                 this.heuristic -= peasant.getNumGold() + peasant.getNumWood();
             } else {
-                if (peasantCanHarvest(peasant)) {
+                if (canHarvestNow(peasant)) {
                     this.heuristic -= 50;
                 } else if (getResourceAt(peasant.getPosition()) == null) {
                     this.heuristic += 100;
@@ -159,17 +143,12 @@ public class GameState implements Comparable<GameState> {
         return this.heuristic;
     }
 
-    /**
-     * Cost is updated every time a move is applied.
-     *
-     * @return The current cost to reach this goal
-     */
     public double getCost() {
         return this.cost;
     }
 
     public boolean canBuild() {
-        return currGold >= REQUIRED_GOLD_TO_BUILD && this.peasants.size() < MAX_NUM_PEASANTS;
+        return currGold >= REQUIRED_GOLD_TO_BUILD && currFood > 0;
     }
 
     private Resource getResourceAt(Position position) {
@@ -223,30 +202,30 @@ public class GameState implements Comparable<GameState> {
         return children;
     }
 
-    public void applyBuildAction(StripsAction action) {
+    public void applyBuildAction() {
         this.currGold = this.currGold - REQUIRED_GOLD_TO_BUILD;
         Peasant peasant = new Peasant(nextId, new Position(TOWN_HALL_POSITION));
-        nextId++;
+        this.nextId++;
+        this.currFood--;
         this.peasants.put(peasant.getId(), peasant);
     }
 
-    public void applyMoveAction(StripsAction action, int peasantId, Position destination) {
+    public void applyMoveAction(int peasantId, Position destination) {
         this.peasants.get(peasantId).setPosition(destination);
     }
 
-    public void applyHarvestAction(StripsAction action, int peasantId, int resourceId) {
+    public void applyHarvestAction(int peasantId, int resourceId) {
         Resource resource = this.resources.get(resourceId);
         Peasant peasant = this.peasants.get(peasantId);
         if (resource.isGold()) {
-            peasant.setNumGold(Math.min(100, resource.getAmountLeft()));
-            resource.setAmountLeft(Math.max(0, resource.getAmountLeft() - 100));
+            peasant.setNumGold(Math.min(100, resource.getAmount()));
         } else {
-            peasant.setNumWood(Math.min(100, resource.getAmountLeft()));
-            resource.setAmountLeft(Math.max(0, resource.getAmountLeft() - 100));
+            peasant.setNumWood(Math.min(100, resource.getAmount()));
         }
+        resource.setAmountLeft(Math.max(0, resource.getAmount() - 100));
     }
 
-    public void applyDepositAction(StripsAction action, int peasantId) {
+    public void applyDepositAction(int peasantId) {
         Peasant peasant = this.peasants.get(peasantId);
         if (peasant.hasGold()) {
             this.currGold += peasant.getNumGold();

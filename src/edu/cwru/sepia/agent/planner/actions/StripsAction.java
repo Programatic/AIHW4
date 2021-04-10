@@ -26,16 +26,12 @@ public interface StripsAction {
      */
     public default GameState apply(GameState state) {
     	applyAction(state);
-    	updateState(state);
-    	return state;
-    }
-    
-    public default void updateState(GameState state) {
     	state.updatePlanAndCost(this);
+    	return state;
     }
 
 	public void applyAction(GameState state);
-    
+
     public default boolean isDirectedAction() {
 		return false;
 	}

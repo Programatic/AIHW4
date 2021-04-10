@@ -25,7 +25,7 @@ public class DepositAction implements StripsAction {
 
 	@Override
 	public void applyAction(GameState state) {
-		state.applyDepositAction(this, peasantId);
+		state.applyDepositAction(peasantId);
 	}
 
 	@Override

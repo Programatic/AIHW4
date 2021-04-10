@@ -31,7 +31,7 @@ public class Resource {
 		return id;
 	}
 	
-	public int getAmountLeft() {
+	public int getAmount() {
 		return amount;
 	}
 	
