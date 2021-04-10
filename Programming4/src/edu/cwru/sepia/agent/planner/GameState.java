@@ -4,12 +4,10 @@ import edu.cwru.sepia.agent.planner.actions.DepositAction;
 import edu.cwru.sepia.agent.planner.actions.HarvestAction;
 import edu.cwru.sepia.agent.planner.actions.MoveAction;
 import edu.cwru.sepia.agent.planner.actions.StripsAction;
-import edu.cwru.sepia.agent.planner.resources.Resource;
 import edu.cwru.sepia.environment.model.state.ResourceNode;
 import edu.cwru.sepia.environment.model.state.State;
 import edu.cwru.sepia.environment.model.state.Unit;
 
-import javax.swing.plaf.basic.BasicInternalFrameTitlePane;
 import java.util.*;
 
 /**
@@ -30,13 +28,13 @@ import java.util.*;
  * you must be able to distinguish the townhall from a peasant. This can be done by getting
  * the name of the unit type from that unit's TemplateView:
  * state.getUnit(id).getTemplateView().getName().toLowerCase(): returns "townhall" or "peasant"
- * 
+ *
  * You will also need to distinguish between gold mines and trees.
  * state.getResourceNode(id).getType(): returns the type of the given resource
- * 
+ *
  * You can compare these types to values in the ResourceNode.Type enum:
  * ResourceNode.Type.GOLD_MINE and ResourceNode.Type.TREE
- * 
+ *
  * You can check how much of a resource is remaining with the following:
  * state.getResourceNode(id).getAmountRemaining()
  *
@@ -44,18 +42,19 @@ import java.util.*;
  * class/structure you use to represent actions.
  */
 public class GameState implements Comparable<GameState> {
-    private static int REQUIRED_GOLD, REQUIRED_WOOD;
-    private static boolean BUILD_PEASANTS;
     public static Position TOWN_HALL_POSITION;
     public static int TOWN_HALL_ID;
-    private static final int BUILD_GOlD_NEEDED = 400;
+
+    private static final int BUILD_GOLD_NEEDED = 400;
+    private static int REQUIRED_GOLD, REQUIRED_WOOD;
+    private static boolean BUILD_PEASANTS;
 
     private int currGold = 0, currWood = 0, currFood = 2, nextId;
 
     private double cost = 0, heuristic;
 
-    private Map<Integer, Peasant> peasants = new HashMap<Integer, Peasant>(3);
-    private Map<Integer, Resource> resources = new HashMap<Integer, Resource>(7);
+    private Map<Integer, Peasant> peasants = new HashMap<Integer, Peasant>();
+    private Map<Integer, Resource> resources = new HashMap<Integer, Resource>();
     private List<StripsAction> plan = new ArrayList<StripsAction>();
 
     /**
@@ -120,12 +119,7 @@ public class GameState implements Comparable<GameState> {
      * @return true if the goal conditions are met in this instance of game state.
      */
     public boolean isGoal() {
-        // TODO: Implement me!
-        return false;
-    }
-
-    private boolean canHarvestNow(Peasant peasant) {
-        return true;
+        return currGold >= REQUIRED_GOLD && currWood >= REQUIRED_WOOD;
     }
 
     /**
@@ -137,47 +131,55 @@ public class GameState implements Comparable<GameState> {
     public List<GameState> generateChildren() {
         List<GameState> children = new ArrayList<>();
 
-        GameState next_state = new GameState(this);
+        GameState child = new GameState(this);
 
         if (BUILD_PEASANTS && this.canBuild()) {
             // TODO: Build action
         }
 
+        Resource res;
         for (Peasant peasant : this.peasants.values()) {
             if (peasant.isCarrying()) {
                 if (peasant.getPosition().isAdjacent(TOWN_HALL_POSITION)) {
                     DepositAction action = new DepositAction(peasant);
-                    // TODO: Apply action
+                    if (action.preconditionsMet(child))
+                        action.apply(child);
                 } else {
                     MoveAction action = new MoveAction(peasant, TOWN_HALL_POSITION);
-                    // TODO: Apply action
+                    if (action.preconditionsMet(child))
+                        action.apply(child);
                 }
-            } else if (canHarvestNow(peasant)) {
-                Resource resource = getResourceAt(peasant.getPosition());
-                HarvestAction action = new HarvestAction(peasant, resource);
+            } else if ((res = getResourceAt(peasant.getPosition())) != null) {
+                HarvestAction action = new HarvestAction(peasant, res);
+                if (action.preconditionsMet(child))
+                    action.apply(child);
             } else {
                 for (Resource resource : this.resources.values()) {
+                    GameState innerChild = new GameState(child);
                     MoveAction action = new MoveAction(peasant, resource.getPosition());
-                    // TODO: Apply action
+                    if (action.preconditionsMet(innerChild)) {
+                        action.apply(innerChild);
+                    }
+
+                    children.add(innerChild);
                 }
             }
         }
-
-        children.add(next_state);
-
+        children.add(child);
 
         return children;
     }
 
-    public void applyDepositAction(int peasantId) {
-        Peasant peasant = this.peasants.get(peasantId);
-        if (peasant.carryingGold()) {
-            this.currGold += peasant.getCurrGold();
-            peasant.setCurrGold(0);
-        } else {
-            this.currWood += peasant.getCurrWood();
-            peasant.setCurrWood(0);
+    public Stack<StripsAction> getPlan() {
+        Stack<StripsAction> plan = new Stack<StripsAction>();
+        for (int i = this.plan.size() - 1; i > -1; i--) {
+            plan.push(this.plan.get(i));
         }
+        return plan;
+    }
+
+    public void applyMoveAction(int peasantId, Position destination) {
+        this.peasants.get(peasantId).setPosition(destination);
     }
 
     public void applyHarvestAction(int peasantId, int resourceId) {
@@ -191,8 +193,15 @@ public class GameState implements Comparable<GameState> {
         resource.setAmountLeft(Math.max(0, resource.getAmount() - 100));
     }
 
-    public void applyMoveAction(int peasantId, Position destination) {
-        this.peasants.get(peasantId).setPosition(destination);
+    public void applyDepositAction(int peasantId) {
+        Peasant peasant = this.peasants.get(peasantId);
+        if (peasant.carryingGold()) {
+            this.currGold += peasant.getCurrGold();
+            peasant.setCurrGold(0);
+        } else {
+            this.currWood += peasant.getCurrWood();
+            peasant.setCurrWood(0);
+        }
     }
 
     public void update(StripsAction action) {
@@ -222,11 +231,8 @@ public class GameState implements Comparable<GameState> {
         }
 
         if (BUILD_PEASANTS) {
-            this.heuristic += currFood * 5000;
+            // TODO: Implement building peasants
         }
-
-        if (this.isGoal())
-            this.heuristic = Double.MAX_VALUE;
 
         return this.heuristic;
     }
@@ -243,7 +249,7 @@ public class GameState implements Comparable<GameState> {
     }
 
     public boolean canBuild() {
-        return currGold >= BUILD_GOlD_NEEDED && currFood > 0;
+        return currGold >= BUILD_GOLD_NEEDED && currFood > -1;
     }
 
     private Resource getResourceAt(Position position) {
@@ -254,6 +260,7 @@ public class GameState implements Comparable<GameState> {
 
         return null;
     }
+
 
     /**
      * This is necessary to use your state in the Java priority queue. See the official priority queue and Comparable
