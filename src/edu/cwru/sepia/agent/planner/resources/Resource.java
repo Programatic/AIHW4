@@ -1,30 +1,42 @@
 package edu.cwru.sepia.agent.planner.resources;
 
 import edu.cwru.sepia.agent.planner.Position;
+import edu.cwru.sepia.environment.model.state.ResourceNode;
 
-public abstract class Resource {
+public class Resource {
 	protected int id;
-	protected int amountLeft;
+	protected int amount;
 	protected Position position;
+	private ResourceNode.Type type;
+
+	public Resource(int id, int amount, Position position, ResourceNode.Type type) {
+		this.position = position;
+		this.amount = amount;
+		this.type = type;
+		this.id = id;
+	}
+
+	public Resource(Resource resource) {
+		this.position = new Position(resource.position);
+		this.amount = resource.amount;
+		this.type = resource.type;
+		this.id = resource.id;
+	}
 	
-	public abstract boolean isGold();
+	public boolean isGold() {
+		return this.type == ResourceNode.Type.GOLD_MINE;
+	}
 	
-	public abstract boolean isWood();
-	
-	public int getId() {
+	public int getID() {
 		return id;
 	}
 	
-	public void setId(int id) {
-		this.id = id;
-	}
-	
 	public int getAmountLeft() {
-		return amountLeft;
+		return amount;
 	}
 	
 	public void setAmountLeft(int amountLeft) {
-		this.amountLeft = amountLeft;
+		this.amount = amountLeft;
 	}
 	
 	public Position getPosition() {
@@ -36,7 +48,7 @@ public abstract class Resource {
 	}
 
 	public boolean hasRemaining() {
-		return amountLeft > 0;
+		return amount > 0;
 	}
 	
 }

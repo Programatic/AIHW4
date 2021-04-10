@@ -12,9 +12,7 @@ import edu.cwru.sepia.agent.planner.actions.DepositAction;
 import edu.cwru.sepia.agent.planner.actions.HarvestAction;
 import edu.cwru.sepia.agent.planner.actions.MoveAction;
 import edu.cwru.sepia.agent.planner.actions.StripsAction;
-import edu.cwru.sepia.agent.planner.resources.Gold;
 import edu.cwru.sepia.agent.planner.resources.Resource;
-import edu.cwru.sepia.agent.planner.resources.Wood;
 import edu.cwru.sepia.environment.model.state.ResourceNode;
 import edu.cwru.sepia.environment.model.state.State;
 import edu.cwru.sepia.environment.model.state.Unit;
@@ -67,11 +65,8 @@ public class GameState implements Comparable<GameState> {
 		for (ResourceNode.ResourceView resource : state.getAllResourceNodes()) {
 			Position pos = new Position(resource.getXPosition(), resource.getYPosition());
 			resourcePositions.add(pos);
-//			Resource res = new Resource(resource.getID(), resource.getAmountRemaining(), pos, resource.getType());
-			if (resource.getType().name().equalsIgnoreCase(GOLD_RESOURCE_NAME))
-				resources.put(resource.getID(), new Gold(resource.getID(), resource.getAmountRemaining(), pos));
-			else
-				resources.put(resource.getID(), new Wood(resource.getID(), resource.getAmountRemaining(), pos));
+			Resource res = new Resource(resource.getID(), resource.getAmountRemaining(), pos, resource.getType());
+			this.resources.put(resource.getID(), res);
 		}
 
 		for (Unit.UnitView unit : state.getAllUnits()) {
@@ -98,11 +93,8 @@ public class GameState implements Comparable<GameState> {
 		}
 
 		for (Resource resource : state.resources.values()) {
-			if(resource.isGold()) {
-				this.resources.put(resource.getId(), new Gold(resource));
-			} else {
-				this.resources.put(resource.getId(), new Wood(resource));
-			}
+			Resource copy = new Resource(resource);
+			this.resources.put(resource.getID(), copy);
 		};
 
 		plan.addAll(state.plan);
