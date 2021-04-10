@@ -137,11 +137,11 @@ public class GameState implements Comparable<GameState> {
 
         for (Peasant peasant : this.peasants.values()) {
             if (peasant.isCarrying()) {
-                if (peasant.getPosition().isAdjacent(townhall_position)) {
+                if (peasant.getPosition().isAdjacent(TOWN_HALL_POSITION)) {
                     DepositAction action = new DepositAction(peasant);
                     // TODO: Apply action
                 } else {
-                    MoveAction action = new MoveAction(peasant, townhall_position);
+                    MoveAction action = new MoveAction(peasant, TOWN_HALL_POSITION);
                     // TODO: Apply action
                 }
             } else if (canHarvestNow(peasant)) {
