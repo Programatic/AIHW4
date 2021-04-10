@@ -44,6 +44,8 @@ import java.util.Map;
  * class/structure you use to represent actions.
  */
 public class GameState implements Comparable<GameState> {
+    private static int REQUIRED_GOLD, REQUIRED_WOOD;
+    private static boolean BUILD_PEASANTS;
     private static final int BUILD_PEASANT_GOLD = 400, BUILD_PEASANT_FOOD = 1, TOWNHALL_FOOD = 3;
 
     private Position townhall_position;
@@ -65,7 +67,9 @@ public class GameState implements Comparable<GameState> {
      * @param buildPeasants True if the BuildPeasant action should be considered
      */
     public GameState(State.StateView state, int playernum, int requiredGold, int requiredWood, boolean buildPeasants) {
-        // TODO: Implement me!
+        REQUIRED_GOLD = requiredGold;
+        REQUIRED_WOOD = requiredWood;
+        BUILD_PEASANTS = buildPeasants;
     }
 
     public GameState(GameState state) {
