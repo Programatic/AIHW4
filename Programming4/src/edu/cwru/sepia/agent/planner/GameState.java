@@ -239,7 +239,6 @@ public class GameState implements Comparable<GameState> {
      */
     @Override
     public int hashCode() {
-        // TODO: Implement me!
-        return 0;
+        return Objects.hash(currGold, currWood, currFood, peasants);
     }
 }
