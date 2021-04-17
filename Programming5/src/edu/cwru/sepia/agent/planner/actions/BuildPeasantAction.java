@@ -3,34 +3,30 @@ package edu.cwru.sepia.agent.planner.actions;
 import edu.cwru.sepia.agent.planner.GameState;
 import edu.cwru.sepia.agent.planner.Position;
 
-public class BuildPeasantAction implements  StripsAction {
-    private int townGold, townFood;
-
-    public BuildPeasantAction(int townGold, int townFood) {
-        this.townFood = townFood;
-        this.townGold = townGold;
+public class BuildPeasantAction implements StripsAction {
+    public BuildPeasantAction() {
     }
 
     @Override
     public boolean preconditionsMet(GameState state) {
-        return townFood >= 0 && townGold >= GameState.BUILD_GOLD_NEEDED;
+        return state.canBuild();
     }
 
     @Override
     public GameState apply(GameState state) {
-        state.applyBuildAction();
+        state.applyBuildPeasantAction();
         state.update(this);
         return state;
     }
 
     @Override
     public int getPeasantID() {
-        return 0;
+        return -1;
     }
 
     @Override
     public Position getPosition() {
-        return null;
+        return GameState.TOWN_HALL_POSITION;
     }
 
     @Override

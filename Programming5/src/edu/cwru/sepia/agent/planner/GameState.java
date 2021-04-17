@@ -39,6 +39,10 @@ import java.util.*;
  * class/structure you use to represent actions.
  */
 public class GameState implements Comparable<GameState> {
+    // TODO: REMOVE
+//    private static int PEASANT_TEMPLATE_ID;
+
+
     public static Position TOWN_HALL_POSITION;
     public static int TOWN_HALL_ID;
     public static final int BUILD_GOLD_NEEDED = 400;
@@ -46,7 +50,7 @@ public class GameState implements Comparable<GameState> {
     private static int REQUIRED_GOLD, REQUIRED_WOOD;
     private static boolean BUILD_PEASANTS;
 
-    private int currGold = 0, currWood = 0, currFood = 2, nextId = 0;
+    private int currGold = 0, currWood = 0, currFood = 2, nextId = Integer.MIN_VALUE;
 
     private double cost = 0, heuristic;
 
@@ -69,15 +73,13 @@ public class GameState implements Comparable<GameState> {
         REQUIRED_WOOD = requiredWood;
         BUILD_PEASANTS = buildPeasants;
 
-        this.currFood = 3;
-
         for (ResourceNode.ResourceView resource : state.getAllResourceNodes()) {
             Position pos = new Position(resource.getXPosition(), resource.getYPosition());
             Resource res = new Resource(resource.getID(), resource.getAmountRemaining(), pos, resource.getType());
             this.resources.put(resource.getID(), res);
 
-            if (res.getID() > nextId)
-                nextId = res.getID() + 1;
+            if (resource.getID() > nextId)
+                nextId = resource.getID() + 1;
         }
 
         for (Unit.UnitView unit : state.getAllUnits()) {
@@ -88,11 +90,13 @@ public class GameState implements Comparable<GameState> {
             } else {
                 Peasant peasant = new Peasant(unit.getID(), pos);
                 this.peasants.put(unit.getID(), peasant);
+//                PEASANT_TEMPLATE_ID = unit.getTemplateView().getID();
             }
 
             if (unit.getID() > nextId)
                 nextId = unit.getID() + 1;
         }
+
     }
 
     public GameState(GameState state) {
@@ -139,10 +143,12 @@ public class GameState implements Comparable<GameState> {
         GameState child = new GameState(this);
 
         if (BUILD_PEASANTS && this.canBuild()) {
-//            BuildPeasantAction action = new BuildPeasantAction(this.currGold, this.currFood);
-//            if (action.preconditionsMet(child)) {}
-//                action.apply(child);
+            BuildPeasantAction action = new BuildPeasantAction();
+            if (action.preconditionsMet(child))
+                action.apply(child);
 
+            children.add(child);
+            return children;
         }
 
         Resource res;
@@ -178,6 +184,7 @@ public class GameState implements Comparable<GameState> {
         return children;
     }
 
+
     public Stack<StripsAction> getPlan() {
         Stack<StripsAction> plan = new Stack<StripsAction>();
         for (int i = this.plan.size() - 1; i > -1; i--) {
@@ -212,11 +219,12 @@ public class GameState implements Comparable<GameState> {
         }
     }
 
-    public void applyBuildAction() {
-        this.currGold -= BUILD_GOLD_NEEDED;
+    public void applyBuildPeasantAction() {
         Peasant peasant = new Peasant(nextId, new Position(TOWN_HALL_POSITION));
-        this.peasants.put(nextId, peasant);
-        nextId++;
+        peasants.put(nextId, peasant);
+        this.currFood--;
+        this.currGold -= BUILD_GOLD_NEEDED;
+        this. nextId++;
     }
 
     public void update(StripsAction action) {
@@ -247,6 +255,7 @@ public class GameState implements Comparable<GameState> {
 
         if (BUILD_PEASANTS) {
             // TODO: Implement building peasants
+            this.heuristic += 10000;
         }
 
         return this.heuristic;
@@ -264,7 +273,7 @@ public class GameState implements Comparable<GameState> {
     }
 
     public boolean canBuild() {
-        return currGold >= BUILD_GOLD_NEEDED && currFood > 0;
+        return currGold >= BUILD_GOLD_NEEDED && currFood > -1;
     }
 
     private Resource getResourceAt(Position position) {
