@@ -140,8 +140,8 @@ public class GameState implements Comparable<GameState> {
             if (action.preconditionsMet(child))
                 action.apply(child);
 
-            children.add(child);
-            return children;
+//            children.add(child);
+//            return children;
         }
 
         Resource res;
@@ -171,19 +171,16 @@ public class GameState implements Comparable<GameState> {
                     children.add(innerChild);
                 }
             }
-        }
-        children.add(child);
 
-        for(Peasant peasant : this.peasants.values()) {
-            GameState innerChild = new GameState(this);
-
+            GameState nchild = new GameState(this);
             MoveAction moveAction = new MoveAction(peasant, TOWN_HALL_POSITION);
-            if(moveAction.preconditionsMet(innerChild)) {
-                moveAction.apply(innerChild);
+            if(moveAction.preconditionsMet(nchild)) {
+                moveAction.apply(nchild);
             }
 
-            children.add(innerChild);
+            children.add(nchild);
         }
+        children.add(child);
 
         return children;
     }
