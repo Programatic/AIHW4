@@ -1,5 +1,7 @@
 package edu.cwru.sepia.agent.planner;
 
+import java.util.Objects;
+
 public class Peasant {
     private int id;
     private Position position;
@@ -52,5 +54,18 @@ public class Peasant {
 
     public void setPosition(Position position) {
         this.position = position;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Peasant peasant = (Peasant) o;
+        return id == peasant.id && numGold == peasant.numGold && numWood == peasant.numWood && position.equals(peasant.position);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, position, numGold, numWood);
     }
 }
