@@ -75,9 +75,6 @@ public class GameState implements Comparable<GameState> {
             Position pos = new Position(resource.getXPosition(), resource.getYPosition());
             Resource res = new Resource(resource.getID(), resource.getAmountRemaining(), pos, resource.getType());
             this.resources.put(resource.getID(), res);
-
-            if (res.getID() > nextId)
-                nextId = res.getID() + 1;
         }
 
         for (Unit.UnitView unit : state.getAllUnits()) {
@@ -88,11 +85,10 @@ public class GameState implements Comparable<GameState> {
             } else {
                 Peasant peasant = new Peasant(unit.getID(), pos);
                 this.peasants.put(unit.getID(), peasant);
+                this.currFood--;
             }
-
-            if (unit.getID() > nextId)
-                nextId = unit.getID() + 1;
         }
+        this.nextId = 1 + this.peasants.size() + this.resources.size();
     }
 
     public GameState(GameState state) {
