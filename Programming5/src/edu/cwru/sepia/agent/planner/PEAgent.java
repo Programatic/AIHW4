@@ -142,7 +142,7 @@ public class PEAgent extends Agent {
 
 
         if (action instanceof MoveAction) {
-            return Action.createCompoundMove(action.getPeasantID(), ((MoveAction) action).getGoalPosition().x, ((MoveAction) action).getGoalPosition().y);
+            return Action.createCompoundMove(action.getPeasantID(), ((MoveAction) action).getDestination().x, ((MoveAction) action).getDestination().y);
         } else if (action instanceof HarvestAction) {
             return Action.createPrimitiveGather(peasant.getID(), d);
         } else if (action instanceof DepositAction) {
