@@ -6,39 +6,38 @@ import edu.cwru.sepia.agent.planner.Position;
 import edu.cwru.sepia.agent.planner.Resource;
 
 public class HarvestAction implements StripsAction {
-	Peasant peasant;
-	int resourceId;
-	Position peasantPos;
-	Position resourcePos;
-	boolean hasResource;
+	private final int resourceId, peasantID;
+	private final Position peasantPos, resourcePos;
+	private final boolean hasResource, peasantCarrying;
 
 	public HarvestAction(Peasant peasant, Resource resource) {
-		this.peasant = peasant;
+		this.peasantID = peasant.getId();
 		this.resourceId = resource.getID();
 		this.peasantPos = peasant.getPosition();
 		this.resourcePos = resource.getPosition();
 		this.hasResource = resource.hasRemaining();
+		this.peasantCarrying = peasant.isCarrying();
 	}
-	
+
 	@Override
 	public boolean preconditionsMet(GameState state) {
-		return hasResource && !peasant.isCarrying() && peasantPos.equals(resourcePos);
+		return hasResource && !peasantCarrying && peasantPos.equals(resourcePos);
 	}
 
 	@Override
 	public GameState apply(GameState state) {
-		state.applyHarvestAction(peasant.getId(), resourceId);
+		state.applyHarvestAction(peasantID, resourceId);
 		state.update(this);
 		return state;
 	}
 
 	@Override
-	public Position getPositionForDirection() {
-		return resourcePos;
-	}
-	
-	@Override
 	public int getPeasantID() {
-		return peasant.getId();	
+		return peasantID;
+	}
+
+	@Override
+	public Position getPosition() {
+		return this.resourcePos;
 	}
 }

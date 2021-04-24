@@ -133,7 +133,7 @@ public class PEAgent extends Agent {
 	private Action createSepiaAction(StripsAction action, State.StateView stateView) {
 		Unit.UnitView peasant = stateView.getUnit(action.getPeasantID());
 		Position pos = new Position(peasant.getXPosition(), peasant.getYPosition());
-		Position dest = action.getPositionForDirection();
+		Position dest = action.getPosition();
 		Direction d = null;
 
 		if (dest != null)

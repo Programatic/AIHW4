@@ -28,7 +28,7 @@ public interface StripsAction {
     	state.update(this);
     }
 
-    public default Position getPositionForDirection() {
+    public default Position getPosition() {
     	return null;
     }
 	

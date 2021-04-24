@@ -29,7 +29,7 @@ public class DepositAction implements StripsAction {
 	}
 
 	@Override
-	public Position getPositionForDirection() {
+	public Position getPosition() {
 		return townHallPos;
 	}
 	
