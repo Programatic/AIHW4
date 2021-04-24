@@ -301,7 +301,7 @@ public class GameState implements Comparable<GameState> {
     }
 
     public boolean canBuild() {
-        return currGold >= BUILD_GOLD_NEEDED && currFood > 0;
+        return currGold >= BUILD_GOLD_NEEDED && currFood >= 0;
     }
 
     private Resource getResourceAt(Position position) {
