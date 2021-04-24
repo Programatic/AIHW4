@@ -33,7 +33,12 @@ public class MoveAction implements StripsAction {
 	public int getPeasantID() {
 		return peasantID;
 	}
-	
+
+	@Override
+	public Position getPosition() {
+		return null;
+	}
+
 	@Override
 	public double getCost() {
 		return peasantPosition.euclideanDistance(goalPosition) - 1;

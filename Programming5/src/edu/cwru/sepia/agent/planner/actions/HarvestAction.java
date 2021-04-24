@@ -39,4 +39,9 @@ public class HarvestAction implements StripsAction {
 	public Position getPosition() {
 		return this.resourcePos;
 	}
+
+	@Override
+	public double getCost() {
+		return 1;
+	}
 }

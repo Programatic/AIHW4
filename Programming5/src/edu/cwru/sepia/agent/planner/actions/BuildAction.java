@@ -1,6 +1,7 @@
 package edu.cwru.sepia.agent.planner.actions;
 
 import edu.cwru.sepia.agent.planner.GameState;
+import edu.cwru.sepia.agent.planner.Position;
 
 public class BuildAction implements StripsAction {
 	int townhallId;
@@ -25,6 +26,16 @@ public class BuildAction implements StripsAction {
 	@Override
 	public int getPeasantID() {
 		return townhallId;	
+	}
+
+	@Override
+	public Position getPosition() {
+		return null;
+	}
+
+	@Override
+	public double getCost() {
+		return 1;
 	}
 
 }

@@ -35,4 +35,9 @@ public class DepositAction implements StripsAction {
 	public Position getPosition() {
 		return townHallPos;
 	}
+
+	@Override
+	public double getCost() {
+		return 1;
+	}
 }
