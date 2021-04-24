@@ -20,13 +20,8 @@ public interface StripsAction {
     /**
      *
      * @param state State to apply action to
-     * @return State resulting from successful action application.
-     */
-    public GameState apply(GameState state);
-
-    public default void updateState(GameState state) {
-    	state.update(this);
-    }
+	 */
+    public void apply(GameState state);
 
     public default Position getPosition() {
     	return null;
