@@ -38,7 +38,7 @@ public class HarvestAction implements StripsAction {
 	}
 	
 	@Override
-	public int getUnitId() {
+	public int getPeasantID() {
 		return peasant.getId();	
 	}
 }

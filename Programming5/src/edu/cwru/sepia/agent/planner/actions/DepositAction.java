@@ -34,7 +34,7 @@ public class DepositAction implements StripsAction {
 	}
 	
 	@Override
-	public int getUnitId() {
+	public int getPeasantID() {
 		return peasantId;	
 	}
 

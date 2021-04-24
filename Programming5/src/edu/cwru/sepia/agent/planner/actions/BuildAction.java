@@ -24,7 +24,7 @@ public class BuildAction implements StripsAction {
 	}
 
 	@Override
-	public int getUnitId() {
+	public int getPeasantID() {
 		return townhallId;	
 	}
 

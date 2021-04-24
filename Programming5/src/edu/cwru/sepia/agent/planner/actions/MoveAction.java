@@ -31,13 +31,12 @@ public class MoveAction implements StripsAction {
 	}
 
 	@Override
-	public int getUnitId() {
+	public int getPeasantID() {
 		return peasantID;
 	}
 	
 	@Override
 	public double getCost() {
-		return peasantPosition.chebyshevDistance(goalPosition) - 1;
+		return peasantPosition.euclideanDistance(goalPosition) - 1;
 	}
-
 }

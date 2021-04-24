@@ -5,7 +5,6 @@ import edu.cwru.sepia.action.ActionResult;
 import edu.cwru.sepia.agent.Agent;
 import edu.cwru.sepia.agent.planner.actions.*;
 import edu.cwru.sepia.environment.model.history.History;
-import edu.cwru.sepia.environment.model.state.ResourceType;
 import edu.cwru.sepia.environment.model.state.State;
 import edu.cwru.sepia.environment.model.state.Template;
 import edu.cwru.sepia.environment.model.state.Unit;
@@ -92,12 +91,12 @@ public class PEAgent extends Agent {
 
 		while (!plan.empty()) {
 			StripsAction action = plan.peek();
-			ActionResult previousAction = prev.get(action.getUnitId());
+			ActionResult previousAction = prev.get(action.getPeasantID());
 
-			if (previousAction != null || actions.containsKey(action.getUnitId()))
+			if (previousAction != null || actions.containsKey(action.getPeasantID()))
 				break;
 
-			if (!actions.containsKey(action.getUnitId())) {
+			if (!actions.containsKey(action.getPeasantID())) {
 				StripsAction a = plan.pop();
 				Action sepiaAction = createSepiaAction(a, stateView);
 				actions.put(sepiaAction.getUnitId(), sepiaAction);
@@ -132,7 +131,7 @@ public class PEAgent extends Agent {
 	 * @return SEPIA representation of same action
 	 */
 	private Action createSepiaAction(StripsAction action, State.StateView stateView) {
-		Unit.UnitView peasant = stateView.getUnit(action.getUnitId());
+		Unit.UnitView peasant = stateView.getUnit(action.getPeasantID());
 		Position pos = new Position(peasant.getXPosition(), peasant.getYPosition());
 		Position dest = action.getPositionForDirection();
 		Direction d = null;
@@ -142,7 +141,7 @@ public class PEAgent extends Agent {
 
 
 		if (action instanceof MoveAction) {
-			return Action.createCompoundMove(action.getUnitId(), ((MoveAction) action).getDestination().x, ((MoveAction) action).getDestination().y);
+			return Action.createCompoundMove(action.getPeasantID(), ((MoveAction) action).getDestination().x, ((MoveAction) action).getDestination().y);
 		} else if (action instanceof HarvestAction) {
 			return Action.createPrimitiveGather(peasant.getID(), d);
 		} else if (action instanceof DepositAction) {

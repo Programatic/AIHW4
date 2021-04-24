@@ -36,7 +36,7 @@ public interface StripsAction {
 	 * 
 	 * @return the id of the unit to perform the action
 	 */
-	public int getUnitId();
+	public int getPeasantID();
 	
 	public default double getCost() {
 		return 1;
