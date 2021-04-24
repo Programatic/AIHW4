@@ -120,22 +120,6 @@ public class GameState implements Comparable<GameState> {
 		return GameState.resourcePositions.contains(destination);
 	}
 	
-	private void addToObtainedWood(int numWood) {
-		this.currWood += numWood;
-	}
-
-	private void addToObtainedGold(int numGold) {
-		this.currGold += numGold;
-	}
-
-	public Stack<StripsAction> getPlan() {
-		Stack<StripsAction> plan = new Stack<StripsAction>();
-		for(int i = this.plan.size() - 1; i > -1; i--) {
-			plan.push(this.plan.get(i));
-		}
-		return plan;
-	}
-
 	/**
 	 *
 	 * @return true if the goal conditions are met in this instance of game state.
@@ -233,30 +217,36 @@ public class GameState implements Comparable<GameState> {
 		return children;
 	}
 
+	public Stack<StripsAction> getPlan() {
+		Stack<StripsAction> plan = new Stack<StripsAction>();
+		for (int i = this.plan.size() - 1; i > -1; i--) {
+			plan.push(this.plan.get(i));
+		}
+		return plan;
+	}
 
 	public void applyMoveAction(int peasantId, Position destination) {
-		getPeasantWithId(peasantId).setPosition(destination);
+		this.peasants.get(peasantId).setPosition(destination);
 	}
 
 	public void applyHarvestAction(int peasantId, int resourceId) {
-		Resource resource = getResourceWithId(resourceId);
-		Peasant peasant = getPeasantWithId(peasantId);
-		if(resource.isGold()) {
+		Resource resource = this.resources.get(resourceId);
+		Peasant peasant = this.peasants.get(peasantId);
+		if (resource.isGold()) {
 			peasant.setCurrGold(Math.min(100, resource.getAmount()));
-			resource.setAmountLeft(Math.max(0, resource.getAmount() - 100));
 		} else {
 			peasant.setCurrWood(Math.min(100, resource.getAmount()));
-			resource.setAmountLeft(Math.max(0, resource.getAmount() - 100));
 		}
+		resource.setAmountLeft(Math.max(0, resource.getAmount() - 100));
 	}
 
 	public void applyDepositAction(int peasantId) {
-		Peasant peasant = getPeasantWithId(peasantId);
-		if(peasant.carryingGold()) {
-			addToObtainedGold(peasant.getCurrGold());
+		Peasant peasant = this.peasants.get(peasantId);
+		if (peasant.carryingGold()) {
+			this.currGold += peasant.getCurrGold();
 			peasant.setCurrGold(0);
 		} else {
-			addToObtainedWood(peasant.getCurrWood());
+			this.currWood += peasant.getCurrWood();
 			peasant.setCurrWood(0);
 		}
 	}
