@@ -175,8 +175,8 @@ public class GameState implements Comparable<GameState> {
 		}
 		
 		for(Peasant peasant : this.peasants.values()) {
-			if(peasant.hasResource()) {
-				this.heuristic -= peasant.getNumGold() + peasant.getNumWood();
+			if(peasant.isCarrying()) {
+				this.heuristic -= peasant.getCurrGold() + peasant.getCurrWood();
 			} else {
 				if(peasantCanHarvest(peasant)) {
 					this.heuristic -= 50;
@@ -216,7 +216,7 @@ public class GameState implements Comparable<GameState> {
 
 		GameState child = new GameState(this);
 		for(Peasant peasant : this.peasants.values()) {			
-			if(peasant.hasResource()) {
+			if(peasant.isCarrying()) {
 				if(peasant.getPosition().equals(TOWN_HALL_POSITION)) {
 					DepositAction action = new DepositAction(peasant);
 					if(action.preconditionsMet(child)) {
@@ -243,7 +243,7 @@ public class GameState implements Comparable<GameState> {
 						action.apply(innerChild);
 					}
 					for(Peasant other : this.peasants.values()) {
-						if(!other.equals(peasant) && !other.hasResource() && !peasantCanHarvest(peasant)) {
+						if(!other.equals(peasant) && !other.isCarrying() && !peasantCanHarvest(peasant)) {
 							if(resource.getAmount() >= RESOURCE_AMOUNT_TO_TAKE * 2) {
 								MoveAction otherAction = new MoveAction(other, resource.getPosition());
 								if(otherAction.preconditionsMet(innerChild)) {
@@ -306,22 +306,22 @@ public class GameState implements Comparable<GameState> {
 		Resource resource = getResourceWithId(resourceId);
 		Peasant peasant = getPeasantWithId(peasantId);
 		if(resource.isGold()) {
-			peasant.setNumGold(Math.min(100, resource.getAmount()));
+			peasant.setCurrGold(Math.min(100, resource.getAmount()));
 			resource.setAmountLeft(Math.max(0, resource.getAmount() - 100));
 		} else {
-			peasant.setNumWood(Math.min(100, resource.getAmount()));
+			peasant.setCurrWood(Math.min(100, resource.getAmount()));
 			resource.setAmountLeft(Math.max(0, resource.getAmount() - 100));
 		}
 	}
 
 	public void applyDepositAction(StripsAction action, int peasantId) {
 		Peasant peasant = getPeasantWithId(peasantId);
-		if(peasant.hasGold()) {
-			addToObtainedGold(peasant.getNumGold());
-			peasant.setNumGold(0);
+		if(peasant.carryingGold()) {
+			addToObtainedGold(peasant.getCurrGold());
+			peasant.setCurrGold(0);
 		} else {
-			addToObtainedWood(peasant.getNumWood());
-			peasant.setNumWood(0);
+			addToObtainedWood(peasant.getCurrWood());
+			peasant.setCurrWood(0);
 		}
 	}
 	

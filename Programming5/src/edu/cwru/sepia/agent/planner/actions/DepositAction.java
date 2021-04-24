@@ -15,7 +15,7 @@ public class DepositAction implements StripsAction {
 	public DepositAction(Peasant peasant) {
 		this.peasantId = peasant.getId();
 		this.peasantPos = peasant.getPosition();
-		this.hasResource = peasant.hasResource();
+		this.hasResource = peasant.isCarrying();
 	}
 	
 	@Override
