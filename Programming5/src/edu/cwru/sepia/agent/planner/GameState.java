@@ -139,10 +139,9 @@ public class GameState implements Comparable<GameState> {
         GameState child = new GameState(this);
 
         if (BUILD_PEASANTS && this.canBuild()) {
-//            BuildPeasantAction action = new BuildPeasantAction(this.currGold, this.currFood);
-//            if (action.preconditionsMet(child)) {}
-//                action.apply(child);
-
+            BuildPeasantAction action = new BuildPeasantAction();
+            if (action.preconditionsMet(child))
+                action.apply(child);
         }
 
         Resource res;
@@ -172,8 +171,45 @@ public class GameState implements Comparable<GameState> {
                     children.add(innerChild);
                 }
             }
+
+            GameState nchild = new GameState(this);
+            MoveAction moveAction = new MoveAction(peasant, TOWN_HALL_POSITION);
+            if(moveAction.preconditionsMet(nchild)) {
+                moveAction.apply(nchild);
+            }
+
+            children.add(nchild);
         }
         children.add(child);
+
+        // k strips actions
+
+        child = new GameState(this);
+        for(Peasant peasant : this.peasants.values()) {
+            DepositAction depositAction = new DepositAction(peasant);
+            if(depositAction.preconditionsMet(child)) {
+                depositAction.apply(child);
+            }
+
+            for(Resource resource : this.resources.values()) {
+                GameState nchild = new GameState(child);
+                StripsAction action = peasant.getPosition().isAdjacent(resource.getPosition()) ?
+                        new HarvestAction(peasant, resource) : new MoveAction(peasant, resource.getPosition());
+
+                if(action.preconditionsMet(nchild)) {
+                    action.apply(nchild);
+                }
+
+                children.add(nchild);
+            }
+
+            MoveAction action = new MoveAction(peasant, TOWN_HALL_POSITION);
+            if(action.preconditionsMet(child)) {
+                action.apply(child);
+            }
+
+            children.add(child);
+        }
 
         return children;
     }
