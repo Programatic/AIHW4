@@ -1,12 +1,6 @@
 package edu.cwru.sepia.agent.planner;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.Stack;
+import java.util.*;
 
 import edu.cwru.sepia.agent.planner.actions.*;
 import edu.cwru.sepia.agent.planner.actions.BuildPeasantAction;
@@ -19,15 +13,12 @@ import edu.cwru.sepia.environment.model.state.Unit;
  * @author Sarah Whelan
  */
 public class GameState implements Comparable<GameState> {
-	public static int PEASANT_TEMPLATE_ID;
 	public static Position TOWN_HALL_POSITION;
-	public static final String TOWNHALL_NAME = "townhall";
 	public static int TOWN_HALL_ID;
 	
-	private static final String GOLD_RESOURCE_NAME = "GOLD_MINE";
 	private static final int RESOURCE_AMOUNT_TO_TAKE = 100; // Unit-less amount of resource
 	private static final int BUILD_PESANT_OFFSET = 20000; // Unit-less
-	private static final int REQUIRED_GOLD_TO_BUILD = 400; // in Gold amount
+	private static final int BUILD_GOLD_NEEDED = 400; // in Gold amount
 	private static final int MAX_NUM_PEASANTS = 3;
 
 	private static Set<Position> resourcePositions = new HashSet<Position>();
@@ -201,17 +192,8 @@ public class GameState implements Comparable<GameState> {
 		return this.heuristic;
 	}
 
-	/**
-	 * Cost is updated every time a move is applied.
-	 *
-	 * @return The current cost to reach this goal
-	 */
-	public double getCost() {
-		return this.cost;
-	}
-
 	public boolean canBuild() {
-		return currGold >= REQUIRED_GOLD_TO_BUILD && this.peasants.size() < MAX_NUM_PEASANTS;
+		return currGold >= BUILD_GOLD_NEEDED && this.peasants.size() < MAX_NUM_PEASANTS;
 	}
 
 	public List<GameState> generateChildren() {
@@ -304,7 +286,7 @@ public class GameState implements Comparable<GameState> {
 	}
 
 	public void applyBuildPeasantAction() {
-		this.currGold = this.currGold - REQUIRED_GOLD_TO_BUILD;
+		this.currGold = this.currGold - BUILD_GOLD_NEEDED;
 		Peasant peasant = new Peasant(nextId, new Position(TOWN_HALL_POSITION));
 		nextId++;
 		this.peasants.put(peasant.getId(), peasant);
@@ -344,47 +326,62 @@ public class GameState implements Comparable<GameState> {
 
 	/**
 	 *
-	 * @param o The other game state to compare
+	 * Write the function that computes the current cost to get to this node. This is combined with your heuristic to
+	 * determine which actions/states are better to explore.
+	 *
+	 * @return The current cost to reach this goal
+	 */
+	public double getCost() {
+		return this.cost;
+	}
+
+//	public boolean canBuild() {
+//		return currGold >= BUILD_GOLD_NEEDED && currFood > -1;
+//	}
+
+	private Resource getResourceAt(Position position) {
+		for (Resource resource : this.resources.values()) {
+			if (resource.getPosition().equals(position))
+				return resource;
+		}
+
+		return null;
+	}
+
+
+	/**
+	 * This is necessary to use your state in the Java priority queue. See the official priority queue and Comparable
+	 * interface documentation to learn how this function should work.
+	 *
 	 * @return 1 if this state costs more than the other, 0 if equal, -1 otherwise
 	 */
 	@Override
-	public int compareTo(GameState o) {
-		if(this.heuristic() > o.heuristic()){
-			return 1;
-		} else if(this.heuristic() < o.heuristic()){
-			return -1;
-		}
-		return 0;
+	public int compareTo(GameState gameState) {
+		return Double.compare(this.heuristic(), gameState.heuristic());
 	}
 
+	/**
+	 * This will be necessary to use the GameState as a key in a Set or Map.
+	 *
+	 * @param o The game state to compare
+	 * @return True if this state equals the other state, false otherwise.
+	 */
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		GameState gameState = (GameState) o;
+		return currGold == gameState.currGold && currWood == gameState.currWood && currFood == gameState.currFood && peasants.equals(gameState.peasants);
+	}
+
+	/**
+	 * This is necessary to use the GameState as a key in a HashSet or HashMap. Remember that if two objects are
+	 * equal they should hash to the same value.
+	 *
+	 * @return An integer hashcode that is equal for equal states.
+	 */
 	@Override
 	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + currGold;
-		result = prime * result + currWood;
-		result = prime * result + ((peasants == null) ? 0 : peasants.hashCode());
-		return result;
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		GameState other = (GameState) obj;
-		if (currGold != other.currGold)
-			return false;
-		if (currWood != other.currWood)
-			return false;
-		if (peasants == null) {
-			if (other.peasants != null)
-				return false;
-		} else if (!peasants.equals(other.peasants))
-			return false;
-		return true;
+		return Objects.hash(currGold, currWood, currFood, peasants);
 	}
 }
