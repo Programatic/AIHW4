@@ -1,10 +1,8 @@
 package edu.cwru.sepia.agent.planner.actions;
 
-import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.agent.planner.GameState;
 import edu.cwru.sepia.agent.planner.Peasant;
 import edu.cwru.sepia.agent.planner.Position;
-import edu.cwru.sepia.util.Direction;
 
 public class DepositAction implements StripsAction {
 	int peasantId;
@@ -25,8 +23,8 @@ public class DepositAction implements StripsAction {
 
 	@Override
 	public GameState apply(GameState state) {
-		state.applyDepositAction(this, peasantId);
-		state.updatePlanAndCost(this);
+		state.applyDepositAction(peasantId);
+		state.update(this);
 		return state;
 	}
 

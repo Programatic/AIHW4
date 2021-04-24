@@ -291,18 +291,18 @@ public class GameState implements Comparable<GameState> {
 		return children;
 	}
 
-	public void applyBuildAction(StripsAction action) {
+	public void applyBuildAction() {
 		this.obtainedGold = this.obtainedGold - REQUIRED_GOLD_TO_BUILD;
 		Peasant peasant = new Peasant(nextId, new Position(TOWN_HALL_POSITION));
 		nextId++;
 		this.peasants.put(peasant.getId(), peasant);
 	}
 
-	public void applyMoveAction(StripsAction action, int peasantId, Position destination) {
+	public void applyMoveAction(int peasantId, Position destination) {
 		getPeasantWithId(peasantId).setPosition(destination);
 	}
 
-	public void applyHarvestAction(StripsAction action, int peasantId, int resourceId) {
+	public void applyHarvestAction(int peasantId, int resourceId) {
 		Resource resource = getResourceWithId(resourceId);
 		Peasant peasant = getPeasantWithId(peasantId);
 		if(resource.isGold()) {
@@ -314,7 +314,7 @@ public class GameState implements Comparable<GameState> {
 		}
 	}
 
-	public void applyDepositAction(StripsAction action, int peasantId) {
+	public void applyDepositAction(int peasantId) {
 		Peasant peasant = getPeasantWithId(peasantId);
 		if(peasant.carryingGold()) {
 			addToObtainedGold(peasant.getCurrGold());
@@ -325,7 +325,7 @@ public class GameState implements Comparable<GameState> {
 		}
 	}
 	
-	public void updatePlanAndCost(StripsAction action) {
+	public void update(StripsAction action) {
 		plan.add(action);
 		this.cost += action.getCost();
 	}
