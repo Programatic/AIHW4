@@ -265,7 +265,7 @@ public class GameState implements Comparable<GameState> {
      * @return The value estimated remaining cost to reach a goal state from this state.
      */
     public double heuristic() {
-        if (this.heuristic > 0) {
+        if (this.heuristic != 0) {
             return heuristic;
         }
 
@@ -277,8 +277,12 @@ public class GameState implements Comparable<GameState> {
             this.heuristic += (REQUIRED_WOOD - currWood);
         }
 
-        if (BUILD_PEASANTS) {
-            // TODO: Implement building peasants
+        if(BUILD_PEASANTS) {
+            this.heuristic += currFood * 1000 - (canBuild() ? 1 : 0) * 1000;
+        }
+
+        for(Peasant peasant : this.peasants.values()) {
+            this.heuristic += (peasant.isCarrying() ? -(peasant.getCurrGold() + peasant.getCurrWood()) : getResourceAt(peasant.getPosition()) != null ? -100 : 100);
         }
 
         return this.heuristic;
