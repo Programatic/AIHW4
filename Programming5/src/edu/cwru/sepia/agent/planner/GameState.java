@@ -244,11 +244,12 @@ public class GameState implements Comparable<GameState> {
         }
     }
 
-    public void applyBuildAction() {
-        this.currGold -= BUILD_GOLD_NEEDED;
+    public void applyBuildPeasantAction() {
         Peasant peasant = new Peasant(nextId, new Position(TOWN_HALL_POSITION));
-        this.peasants.put(nextId, peasant);
-        nextId++;
+        peasants.put(nextId, peasant);
+        this.currFood--;
+        this.currGold -= BUILD_GOLD_NEEDED;
+        this.nextId++;
     }
 
     public void update(StripsAction action) {
