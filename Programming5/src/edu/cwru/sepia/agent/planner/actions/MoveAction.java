@@ -1,47 +1,43 @@
 package edu.cwru.sepia.agent.planner.actions;
 
+import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.agent.planner.GameState;
 import edu.cwru.sepia.agent.planner.Peasant;
 import edu.cwru.sepia.agent.planner.Position;
+import edu.cwru.sepia.util.Direction;
 
 public class MoveAction implements StripsAction {
-    private Position goalPosition, peasantPosition;
-    private int peasantID;
+	Peasant peasant;
+	Position destination;
 
-    public MoveAction(Peasant peasant, Position goalPosition) {
-        this.peasantPosition = peasant.getPosition();
-        this.goalPosition = goalPosition;
-        this.peasantID = peasant.getId();
-    }
+	public MoveAction(Peasant peasant, Position destination) {
+		this.peasant = peasant;
+		this.destination = destination;
+	}
 
-    @Override
-    public boolean preconditionsMet(GameState state) {
-        return !peasantPosition.equals(goalPosition);
-    }
+	@Override
+	public boolean preconditionsMet(GameState state) {
+		return !peasant.getPosition().equals(destination);
+	}
 
-    @Override
-    public GameState apply(GameState state) {
-        state.applyMoveAction(peasantID, goalPosition);
-        state.update(this);
-        return state;
-    }
+	@Override
+	public void applyAction(GameState state) {
+		state.applyMoveAction(this, peasant.getId(), destination);
+	}
 
-    @Override
-    public int getPeasantID() {
-        return this.peasantID;
-    }
+	@Override
+	public Action createSepiaAction(Direction direction) {
+		return Action.createCompoundMove(peasant.getId(), destination.x, destination.y);
+	}
 
-    @Override
-    public Position getPosition() {
-        return null;
-    }
+	@Override
+	public int getUnitId() {
+		return peasant.getId();	
+	}
+	
+	@Override
+	public double getCost() {
+		return peasant.getPosition().chebyshevDistance(destination) - 1;
+	}
 
-    @Override
-    public double getCost() {
-        return peasantPosition.euclideanDistance(goalPosition) - 1;
-    }
-
-    public Position getGoalPosition() {
-        return goalPosition;
-    }
 }
