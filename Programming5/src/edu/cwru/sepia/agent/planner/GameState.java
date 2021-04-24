@@ -10,7 +10,9 @@ import java.util.Stack;
 
 import edu.cwru.sepia.agent.planner.actions.*;
 import edu.cwru.sepia.agent.planner.actions.BuildPeasantAction;
+import edu.cwru.sepia.environment.model.state.ResourceNode;
 import edu.cwru.sepia.environment.model.state.State;
+import edu.cwru.sepia.environment.model.state.Unit;
 
 /**
  * 
@@ -54,38 +56,51 @@ public class GameState implements Comparable<GameState> {
 	 * @param buildPeasants True if the BuildPeasant action should be considered
 	 */
 	public GameState(State.StateView state, int playernum, int requiredGold, int requiredWood, boolean buildPeasants) {
-		GameState.REQUIRED_GOLD = requiredGold;
-		GameState.REQUIRED_WOOD = requiredWood;
-		GameState.BUILD_PEASANTS = buildPeasants;
-		state.getAllResourceNodes().stream().forEach(e -> {
-			Position position = new Position(e.getXPosition(), e.getYPosition());
-			GameState.resourcePositions.add(position);
-			Resource r = new Resource(e.getID(), e.getAmountRemaining(), position, e.getType());
-			resources.put(e.getID(), r);
-		});
-		state.getAllUnits().stream().forEach(e -> {
-			Position position = new Position(e.getXPosition(), e.getYPosition());
-			if(e.getTemplateView().getName().toLowerCase().equals(TOWNHALL_NAME)) {
-				GameState.TOWN_HALL_POSITION = position;
-				GameState.TOWN_HALL_ID = e.getID();
+		REQUIRED_GOLD = requiredGold;
+		REQUIRED_WOOD = requiredWood;
+		BUILD_PEASANTS = buildPeasants;
+
+		this.currFood = 3;
+
+		for (ResourceNode.ResourceView resource : state.getAllResourceNodes()) {
+			Position pos = new Position(resource.getXPosition(), resource.getYPosition());
+			Resource res = new Resource(resource.getID(), resource.getAmountRemaining(), pos, resource.getType());
+			this.resources.put(resource.getID(), res);
+			resourcePositions.add(pos);;
+		}
+
+		for (Unit.UnitView unit : state.getAllUnits()) {
+			Position pos = new Position(unit.getXPosition(), unit.getYPosition());
+			if (unit.getTemplateView().getName().equalsIgnoreCase("townhall")) {
+				TOWN_HALL_ID = unit.getID();
+				TOWN_HALL_POSITION = pos;
 			} else {
-				GameState.PEASANT_TEMPLATE_ID = e.getTemplateView().getID();
-				this.peasants.put(e.getID(), new Peasant(e.getID(), TOWN_HALL_POSITION));
+				Peasant peasant = new Peasant(unit.getID(), pos);
+				this.peasants.put(unit.getID(), peasant);
 			}
-		});
+		}
 		this.nextId = 1 + this.peasants.size() + this.resources.size();
 	}
 
 	public GameState(GameState state) {
 		this.currGold = state.currGold;
 		this.currWood = state.currWood;
+		this.currFood = state.currFood;
 		this.nextId = state.nextId;
 		this.cost = state.cost;
-		state.peasants.values().stream().forEach(e -> this.peasants.put(e.getId(), new Peasant(e)));
-		state.resources.values().stream().forEach(e -> {
-			this.resources.put(e.getID(), new Resource(e));
-		});	
-		state.plan.stream().forEach(e -> plan.add(e));
+
+		for (Peasant peasant : state.peasants.values()) {
+			Peasant copy = new Peasant(peasant);
+			this.peasants.put(copy.getId(), copy);
+		}
+
+		for (Resource resource : state.resources.values()) {
+			Resource copy = new Resource(resource);
+			this.resources.put(resource.getID(), copy);
+		}
+		;
+
+		plan.addAll(state.plan);
 	}
 	
 	private Peasant getPeasantWithId(int peasantId) {
