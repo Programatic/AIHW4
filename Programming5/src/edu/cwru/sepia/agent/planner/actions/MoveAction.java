@@ -15,19 +15,20 @@ public class MoveAction implements StripsAction {
 		this.destination = destination;
 	}
 
+	public Position getDestination() {
+		return destination;
+	}
+
 	@Override
 	public boolean preconditionsMet(GameState state) {
 		return !peasant.getPosition().equals(destination);
 	}
 
 	@Override
-	public void applyAction(GameState state) {
+	public GameState apply(GameState state) {
 		state.applyMoveAction(this, peasant.getId(), destination);
-	}
-
-	@Override
-	public Action createSepiaAction(Direction direction) {
-		return Action.createCompoundMove(peasant.getId(), destination.x, destination.y);
+		state.updatePlanAndCost(this);
+		return state;
 	}
 
 	@Override

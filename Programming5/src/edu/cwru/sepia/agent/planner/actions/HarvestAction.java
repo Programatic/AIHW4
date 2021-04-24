@@ -28,23 +28,15 @@ public class HarvestAction implements StripsAction {
 	}
 
 	@Override
-	public void applyAction(GameState state) {
+	public GameState apply(GameState state) {
 		state.applyHarvestAction(this, peasant.getId(), resourceId);
+		state.updatePlanAndCost(this);
+		return state;
 	}
 
 	@Override
-	public boolean isDirectedAction() {
-		return true;
-	}
-	
-	@Override
 	public Position getPositionForDirection() {
 		return resourcePos;
-	}
-	
-	@Override
-	public Action createSepiaAction(Direction direction) {
-		return Action.createPrimitiveGather(peasant.getId(), direction);
 	}
 	
 	@Override

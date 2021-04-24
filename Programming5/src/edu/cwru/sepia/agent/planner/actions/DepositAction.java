@@ -24,23 +24,15 @@ public class DepositAction implements StripsAction {
 	}
 
 	@Override
-	public void applyAction(GameState state) {
+	public GameState apply(GameState state) {
 		state.applyDepositAction(this, peasantId);
+		state.updatePlanAndCost(this);
+		return state;
 	}
 
 	@Override
-	public boolean isDirectedAction() {
-		return true;
-	}
-	
-	@Override
 	public Position getPositionForDirection() {
 		return townHallPos;
-	}
-	
-	@Override
-	public Action createSepiaAction(Direction direction) {
-		return Action.createPrimitiveDeposit(peasantId, direction);
 	}
 	
 	@Override

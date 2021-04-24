@@ -24,33 +24,16 @@ public interface StripsAction {
      * @param state State to apply action to
      * @return State resulting from successful action application.
      */
-    public default GameState apply(GameState state) {
-    	applyAction(state);
-    	updateState(state);
-    	return state;
-    }
-    
+    public GameState apply(GameState state);
+
     public default void updateState(GameState state) {
     	state.updatePlanAndCost(this);
     }
 
-	public void applyAction(GameState state);
-    
-    public default boolean isDirectedAction() {
-		return false;
-	}
-    
     public default Position getPositionForDirection() {
     	return null;
     }
 	
-	/**
-	 * 
-	 * @param direction is ignored if not a directed action
-	 * @return a SepiaAction of this action
-	 */
-	public Action createSepiaAction(Direction direction);
-
 	/**
 	 * 
 	 * @return the id of the unit to perform the action

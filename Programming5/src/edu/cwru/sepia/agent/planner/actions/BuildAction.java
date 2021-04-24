@@ -19,15 +19,12 @@ public class BuildAction implements StripsAction {
 	}
 
 	@Override
-	public void applyAction(GameState state) {
+	public GameState apply(GameState state) {
 		state.applyBuildAction(this);
+		state.updatePlanAndCost(this);
+		return state;
 	}
 
-	@Override
-	public Action createSepiaAction(Direction direction) {
-		return Action.createPrimitiveProduction(townhallId, peasantTemplateId);
-	}
-	
 	@Override
 	public int getUnitId() {
 		return townhallId;	
