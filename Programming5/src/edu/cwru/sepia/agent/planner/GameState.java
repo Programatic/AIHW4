@@ -8,11 +8,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 
-import edu.cwru.sepia.agent.planner.actions.BuildAction;
-import edu.cwru.sepia.agent.planner.actions.DepositAction;
-import edu.cwru.sepia.agent.planner.actions.HarvestAction;
-import edu.cwru.sepia.agent.planner.actions.MoveAction;
-import edu.cwru.sepia.agent.planner.actions.StripsAction;
+import edu.cwru.sepia.agent.planner.actions.*;
+import edu.cwru.sepia.agent.planner.actions.BuildPeasantAction;
 import edu.cwru.sepia.environment.model.state.State;
 
 /**
@@ -206,7 +203,7 @@ public class GameState implements Comparable<GameState> {
 		List<GameState> children = new ArrayList<GameState>();
 		if(buildPeasants && this.canBuild()) {
 			GameState buildChild = new GameState(this);
-			BuildAction action = new BuildAction(TOWN_HALL_ID, PEASANT_TEMPLATE_ID);
+			BuildPeasantAction action = new BuildPeasantAction();
 			if(action.preconditionsMet(buildChild)) {
 				action.apply(buildChild);
 				children.add(buildChild);
@@ -291,7 +288,7 @@ public class GameState implements Comparable<GameState> {
 		return children;
 	}
 
-	public void applyBuildAction() {
+	public void applyBuildPeasantAction() {
 		this.obtainedGold = this.obtainedGold - REQUIRED_GOLD_TO_BUILD;
 		Peasant peasant = new Peasant(nextId, new Position(TOWN_HALL_POSITION));
 		nextId++;

@@ -5,7 +5,7 @@ import edu.cwru.sepia.agent.planner.Peasant;
 import edu.cwru.sepia.agent.planner.Position;
 import edu.cwru.sepia.agent.planner.Resource;
 
-public class HarvestAction implements StripsAction {
+public class HarvestAction implements StripsAction{
 	private final int resourceId, peasantID;
 	private final Position peasantPos, resourcePos;
 	private final boolean hasResource, peasantCarrying;
@@ -44,4 +44,6 @@ public class HarvestAction implements StripsAction {
 	public double getCost() {
 		return 1;
 	}
+
+
 }

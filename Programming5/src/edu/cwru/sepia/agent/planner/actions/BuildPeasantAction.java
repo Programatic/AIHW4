@@ -3,14 +3,7 @@ package edu.cwru.sepia.agent.planner.actions;
 import edu.cwru.sepia.agent.planner.GameState;
 import edu.cwru.sepia.agent.planner.Position;
 
-public class BuildAction implements StripsAction {
-	int townhallId;
-	int peasantTemplateId;	
-	
-	public BuildAction(int townhallId, int peasantTemplateId) {
-		this.townhallId = townhallId;
-		this.peasantTemplateId = peasantTemplateId;
-	}
+public class BuildPeasantAction implements StripsAction {
 
 	@Override
 	public boolean preconditionsMet(GameState state) {
@@ -19,23 +12,22 @@ public class BuildAction implements StripsAction {
 
 	@Override
 	public void apply(GameState state) {
-		state.applyBuildAction();
+		state.applyBuildPeasantAction();
 		state.update(this);
 	}
 
 	@Override
 	public int getPeasantID() {
-		return townhallId;	
+		return GameState.TOWN_HALL_ID;
 	}
 
 	@Override
 	public Position getPosition() {
-		return null;
+	    return null;
 	}
 
 	@Override
 	public double getCost() {
 		return 1;
 	}
-
 }

@@ -5,17 +5,13 @@ import edu.cwru.sepia.agent.planner.Peasant;
 import edu.cwru.sepia.agent.planner.Position;
 
 public class MoveAction implements StripsAction {
-	private Position goalPosition, peasantPosition;
-	private int peasantID;
+	private final Position goalPosition, peasantPosition;
+	private final int peasantID;
 
 	public MoveAction(Peasant peasant, Position goalPosition) {
 		this.peasantPosition = peasant.getPosition();
 		this.goalPosition = goalPosition;
 		this.peasantID = peasant.getId();
-	}
-
-	public Position getDestination() {
-		return goalPosition;
 	}
 
 	@Override
@@ -31,7 +27,7 @@ public class MoveAction implements StripsAction {
 
 	@Override
 	public int getPeasantID() {
-		return peasantID;
+		return this.peasantID;
 	}
 
 	@Override
@@ -42,5 +38,9 @@ public class MoveAction implements StripsAction {
 	@Override
 	public double getCost() {
 		return peasantPosition.euclideanDistance(goalPosition) - 1;
+	}
+
+	public Position getDestination() {
+		return goalPosition;
 	}
 }
