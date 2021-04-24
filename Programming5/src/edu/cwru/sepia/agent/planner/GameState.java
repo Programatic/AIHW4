@@ -144,55 +144,6 @@ public class GameState implements Comparable<GameState> {
 		return currGold >= REQUIRED_GOLD && currWood >= REQUIRED_WOOD;
 	}
 
-	/**
-	 * Adds for the amount of resources still needing to be collected.
-	 * Adds for not having peasants
-	 * Adds for not being near resources if not holding anything
-	 * Adds for not being near town all if holding something
-	 * Subtracts for if you can make peasants or if you are next to a resource and not holding anything
-	 * 
-	 * @return The value estimated remaining cost to reach a goal state from this state.
-	 */
-	public double heuristic() {
-		if(this.heuristic != 0) {
-			return heuristic;
-		}
-		
-		if(currWood > currGold) {
-			this.heuristic += 100;
-		}
-		if(currGold <= REQUIRED_GOLD) {
-			this.heuristic += (REQUIRED_GOLD - currGold);
-		} else {
-			this.heuristic += (currGold - REQUIRED_GOLD);
-		}
-		if(currWood <= REQUIRED_WOOD) {
-			this.heuristic += (REQUIRED_WOOD - currWood);
-		} else {
-			this.heuristic += currWood - REQUIRED_WOOD;
-		}
-		if(BUILD_PEASANTS) {
-			this.heuristic += (MAX_NUM_PEASANTS - this.peasants.size()) * BUILD_PESANT_OFFSET;
-			if(canBuild()){
-				this.heuristic -= BUILD_PESANT_OFFSET;
-			}
-		}
-		
-		for(Peasant peasant : this.peasants.values()) {
-			if(peasant.isCarrying()) {
-				this.heuristic -= peasant.getCurrGold() + peasant.getCurrWood();
-			} else {
-				if(peasantCanHarvest(peasant)) {
-					this.heuristic -= 50;
-				} else if(!isResourceLocation(peasant.getPosition())) {
-					this.heuristic += 100;
-				}
-			}
-		}
-		
-		return this.heuristic;
-	}
-
 	public List<GameState> generateChildren() {
 		List<GameState> children = new ArrayList<GameState>();
 		if(BUILD_PEASANTS && this.canBuild()) {
@@ -282,13 +233,6 @@ public class GameState implements Comparable<GameState> {
 		return children;
 	}
 
-	public void applyBuildPeasantAction() {
-		this.currGold = this.currGold - BUILD_GOLD_NEEDED;
-		Peasant peasant = new Peasant(nextId, new Position(TOWN_HALL_POSITION));
-		nextId++;
-		currFood--;
-		this.peasants.put(peasant.getId(), peasant);
-	}
 
 	public void applyMoveAction(int peasantId, Position destination) {
 		getPeasantWithId(peasantId).setPosition(destination);
@@ -316,10 +260,50 @@ public class GameState implements Comparable<GameState> {
 			peasant.setCurrWood(0);
 		}
 	}
-	
+
+	public void applyBuildPeasantAction() {
+		Peasant peasant = new Peasant(nextId, new Position(TOWN_HALL_POSITION));
+		peasants.put(nextId, peasant);
+		this.currFood--;
+        this.currGold -= BUILD_GOLD_NEEDED;
+		this.nextId++;
+	}
+
 	public void update(StripsAction action) {
 		plan.add(action);
 		this.cost += action.getCost();
+	}
+
+	/**
+	 * Write your heuristic function here. Remember this must be admissible for the properties of A* to hold. If you
+	 * can come up with an easy way of computing a consistent heuristic that is even better, but not strictly necessary.
+	 *
+	 * Add a description here in your submission explaining your heuristic.
+	 *
+	 * @return The value estimated remaining cost to reach a goal state from this state.
+	 */
+	public double heuristic() {
+		if (this.heuristic != 0) {
+			return heuristic;
+		}
+
+		if (currGold <= REQUIRED_GOLD) {
+			this.heuristic += (REQUIRED_GOLD - currGold);
+		}
+
+		if (currWood <= REQUIRED_WOOD) {
+			this.heuristic += (REQUIRED_WOOD - currWood);
+		}
+
+		if(BUILD_PEASANTS) {
+			this.heuristic += currFood * 1000 - (canBuild() ? 1 : 0) * 1000;
+		}
+
+		for(Peasant peasant : this.peasants.values()) {
+		    this.heuristic += (peasant.isCarrying() ? -(peasant.getCurrGold() + peasant.getCurrWood()) : peasantCanHarvest(peasant) ? -100 : 100);
+		}
+
+		return this.heuristic;
 	}
 
 	/**
