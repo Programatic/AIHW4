@@ -6,10 +6,9 @@ import edu.cwru.sepia.agent.planner.Position;
 import edu.cwru.sepia.agent.planner.Resource;
 
 public class HarvestAction implements StripsAction{
-    private int resourceId, peasantID;
-    private Position peasantPos;
-    private Position resourcePos;
-    private boolean hasResource, peasantCarrying;
+    private final int resourceId, peasantID;
+    private final Position peasantPos, resourcePos;
+    private final boolean hasResource, peasantCarrying;
 
     public HarvestAction(Peasant peasant, Resource resource) {
         this.peasantID = peasant.getId();
@@ -26,10 +25,9 @@ public class HarvestAction implements StripsAction{
     }
 
     @Override
-    public GameState apply(GameState state) {
+    public void apply(GameState state) {
         state.applyHarvestAction(peasantID, resourceId);
         state.update(this);
-        return state;
     }
 
     @Override
@@ -46,6 +44,4 @@ public class HarvestAction implements StripsAction{
     public double getCost() {
         return 1;
     }
-
-
 }
