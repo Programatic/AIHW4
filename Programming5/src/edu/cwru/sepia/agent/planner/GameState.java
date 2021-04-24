@@ -15,21 +15,10 @@ import edu.cwru.sepia.environment.model.state.Unit;
 public class GameState implements Comparable<GameState> {
 	public static Position TOWN_HALL_POSITION;
 	public static int TOWN_HALL_ID;
-	
-	private static final int RESOURCE_AMOUNT_TO_TAKE = 100; // Unit-less amount of resource
-	private static final int BUILD_PESANT_OFFSET = 20000; // Unit-less
 	private static final int BUILD_GOLD_NEEDED = 400; // in Gold amount
-	private static final int MAX_NUM_PEASANTS = 3;
-
-	private static Set<Position> resourcePositions = new HashSet<Position>();
-
 	private Map<Integer, Peasant> peasants = new HashMap<Integer, Peasant>(3);
 	private Map<Integer, Resource> resources = new HashMap<Integer, Resource>(7);
 	private List<StripsAction> plan = new ArrayList<StripsAction>(300);
-
-
-	/////////////////
-
 
 	private static int REQUIRED_GOLD, REQUIRED_WOOD;
 	private static boolean BUILD_PEASANTS;
@@ -57,7 +46,6 @@ public class GameState implements Comparable<GameState> {
 			Position pos = new Position(resource.getXPosition(), resource.getYPosition());
 			Resource res = new Resource(resource.getID(), resource.getAmountRemaining(), pos, resource.getType());
 			this.resources.put(resource.getID(), res);
-			resourcePositions.add(pos);;
 		}
 
 		for (Unit.UnitView unit : state.getAllUnits()) {
