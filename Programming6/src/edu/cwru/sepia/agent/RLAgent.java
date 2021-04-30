@@ -1,14 +1,22 @@
 package edu.cwru.sepia.agent;
 
 import edu.cwru.sepia.action.Action;
-import edu.cwru.sepia.agent.Callbacks.FeatureCallback;
+import edu.cwru.sepia.action.ActionFeedback;
+import edu.cwru.sepia.action.ActionResult;
+import edu.cwru.sepia.action.TargetedAction;
 import edu.cwru.sepia.agent.Callbacks.ClosestDistance;
+import edu.cwru.sepia.agent.Callbacks.FeatureCallback;
+import edu.cwru.sepia.environment.model.history.DamageLog;
+import edu.cwru.sepia.environment.model.history.DeathLog;
 import edu.cwru.sepia.environment.model.history.History;
 import edu.cwru.sepia.environment.model.state.State;
 import edu.cwru.sepia.environment.model.state.Unit;
 
 import java.io.*;
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 public class RLAgent extends Agent {
     /**
@@ -132,7 +140,7 @@ public class RLAgent extends Agent {
      * the deaths from the last turn do something similar to the following snippet. Please be aware that on the first
      * turn you should not call this as you will get nothing back.
      *
-     ** 
+     **
      *for(DeathLog deathLog : historyView.getDeathLogs(stateView.getTurnNumber() -1)) {
      *     System.out.println("Player: " + deathLog.getController() + " unit: " + deathLog.getDeadUnitID());
      * }
@@ -151,17 +159,17 @@ public class RLAgent extends Agent {
      *
      * Remember that you can use result.getFeedback() on an ActionResult, and compare the result to an ActionFeedback enum.
      * Useful ActionFeedback values include COMPLETED, FAILED, and INCOMPLETE.
-     * 
+     *
      * You can also get the ID of the unit executing an action from an ActionResult. For example,
      * result.getAction().getUnitID()
-     * 
+     *
      * For this assignment it will be most useful to create compound attack actions. These will move your unit
      * within range of the enemy and then attack them once. You can create one using the static method in Action:
      * Action.createCompoundAttack(attackerID, targetID)
-     * 
+     *
      * You will then need to add the actions you create to a Map that will be returned. This creates a mapping
      * between the ID of the unit performing the action and the Action object.
-     * 
+     *
      * @return New actions to execute or nothing if an event has not occurred.
      */
     @Override
@@ -187,7 +195,7 @@ public class RLAgent extends Agent {
     }
 
     /**
-     * Calculate the updated weights for this agent. 
+     * Calculate the updated weights for this agent.
      * @param oldWeights Weights prior to update
      * @param oldFeatures Features from (s,a)
      * @param totalReward Cumulative discounted reward for this footman.
@@ -247,7 +255,35 @@ public class RLAgent extends Agent {
      * @return The current reward
      */
     public double calculateReward(State.StateView stateView, History.HistoryView historyView, int footmanId) {
-        return 0;
+        double reward = 0;
+
+        for(DamageLog damageLog : historyView.getDamageLogs(stateView.getTurnNumber() - 1)) {
+            if (damageLog.getAttackerID() == footmanId && damageLog.getAttackerController() == playernum) {
+                reward += damageLog.getDamage();
+            } else if (damageLog.getDefenderID() == footmanId && damageLog.getAttackerController() == ENEMY_PLAYERNUM) {
+                reward -= damageLog.getDamage();
+            }
+        }
+
+        for(DeathLog deathLog : historyView.getDeathLogs(stateView.getTurnNumber() -1)) {
+            if (deathLog.getDeadUnitID() == footmanId) {
+                reward -= 100;
+            }
+            else if (deathLog.getController() == ENEMY_PLAYERNUM && footmanWasAttackingDeadEnemy(footmanId, deathLog, historyView, stateView.getTurnNumber() - 1)) {
+                reward += 100;
+            }
+        }
+
+        return reward;
+    }
+
+    private boolean footmanWasAttackingDeadEnemy(int footmanId, DeathLog deathLog, History.HistoryView historyView, int lastTurnNumber) {
+      Map<Integer, ActionResult> actionResults = historyView.getCommandFeedback(playernum, lastTurnNumber);
+      if (actionResults.containsKey(footmanId) && actionResults.get(footmanId).getFeedback().equals(ActionFeedback.COMPLETED)) {
+            return deathLog.getDeadUnitID() == ((TargetedAction) actionResults.get(footmanId).getAction()).getTargetId();
+      }
+
+      return false;
     }
 
     /**
@@ -268,17 +304,25 @@ public class RLAgent extends Agent {
                              History.HistoryView historyView,
                              int attackerId,
                              int defenderId) {
-        return 0;
+
+        double[] vec = calculateFeatureVector(stateView, historyView, attackerId, defenderId);
+
+        double q = 0;
+        for (int i = 0; i < NUM_FEATURES; i++) {
+            q = q + weights[i] * vec[i];
+        }
+
+        return q;
     }
 
     /**
      * Given a state and action calculate your features here. Please include a comment explaining what features
      * you chose and why you chose them.
      *
-     * for example: HP 
+     * for example: HP
      * UnitView attacker = stateView.getUnit(attackerId);
      * attacker.getHP()
-     * 
+     *
      * All of your feature functions should evaluate to a double. Collect all of these into an array. You will
      * take a dot product of this array with the weights array to get a Q-value for a given state action.
      *
