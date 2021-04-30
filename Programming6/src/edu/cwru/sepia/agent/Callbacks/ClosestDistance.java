@@ -13,8 +13,15 @@ public class ClosestDistance extends FeatureCallback {
 
         Unit.UnitView attacker = stateView.getUnit(attackerId);
 
+        if (attacker == null)
+            return -1;
+
         for (int enemyID : agent.getEnemyFootmen()) {
             Unit.UnitView enemyUnit = stateView.getUnit(enemyID);
+
+            if (enemyUnit == null)
+                continue;
+
             int distance = RLAgent.manhattanDistance(attacker.getXPosition(), attacker.getYPosition(), enemyUnit.getXPosition(), enemyUnit.getYPosition());
             if (distance < closestDistance) {
                 closestEnemy = enemyID;

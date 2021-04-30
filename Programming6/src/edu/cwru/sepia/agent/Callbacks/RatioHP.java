@@ -11,6 +11,12 @@ public class RatioHP extends FeatureCallback {
         Unit.UnitView attacker = stateView.getUnit(attackerId);
         Unit.UnitView defender = stateView.getUnit(defenderId);
 
+        if (attacker == null)
+            return 0;
+
+        if (defender == null)
+            return 1;
+
         return ((double) attacker.getHP())/((double) defender.getHP());
     }
 }

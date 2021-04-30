@@ -14,10 +14,7 @@ import edu.cwru.sepia.environment.model.state.State;
 import edu.cwru.sepia.environment.model.state.Unit;
 
 import java.io.*;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 public class RLAgent extends Agent {
     /**
@@ -175,7 +172,14 @@ public class RLAgent extends Agent {
      */
     @Override
     public Map<Integer, Action> middleStep(State.StateView stateView, History.HistoryView historyView) {
-        return null;
+        Map<Integer, Action> actionMap = new HashMap<>();
+
+        for (int id : myFootmen) {
+            int target = argMaxQ(stateView, historyView, id);
+            actionMap.put(id, Action.createCompoundAttack(id, target));
+        }
+
+        return actionMap;
     }
 
     /**
@@ -219,7 +223,25 @@ public class RLAgent extends Agent {
      * @return The enemy footman ID this unit should attack
      */
     public int selectAction(State.StateView stateView, History.HistoryView historyView, int attackerId) {
-        return -1;
+        double rand = random.nextDouble();
+        if (rand < 1 - epsilon)
+            return argMaxQ(stateView, historyView, attackerId);
+
+        return enemyFootmen.get(random.nextInt(enemyFootmen.size()));
+    }
+
+    private int argMaxQ(State.StateView stateView, History.HistoryView historyView, int attackerId) {
+        int attack = -1;
+        double q = Double.NEGATIVE_INFINITY;
+        for (int id : enemyFootmen) {
+            double calculated = calcQValue(stateView, historyView, attackerId, id);
+            if (calculated > q) {
+                q = calculated;
+                attack = id;
+            }
+        }
+
+        return attack;
     }
 
     /**
