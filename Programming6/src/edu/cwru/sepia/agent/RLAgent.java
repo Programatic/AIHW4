@@ -6,6 +6,7 @@ import edu.cwru.sepia.action.ActionResult;
 import edu.cwru.sepia.action.TargetedAction;
 import edu.cwru.sepia.agent.Callbacks.ClosestDistance;
 import edu.cwru.sepia.agent.Callbacks.FeatureCallback;
+import edu.cwru.sepia.agent.Callbacks.RatioHP;
 import edu.cwru.sepia.environment.model.history.DamageLog;
 import edu.cwru.sepia.environment.model.history.DeathLog;
 import edu.cwru.sepia.environment.model.history.History;
@@ -41,7 +42,7 @@ public class RLAgent extends Agent {
     /**
      * Set this to whatever size your feature vector is.
      */
-    public static FeatureCallback[] FEATURE_CALLBACKS = {new ClosestDistance()};
+    public static FeatureCallback[] FEATURE_CALLBACKS = {new ClosestDistance(), new RatioHP()};
     public static final int NUM_FEATURES = FEATURE_CALLBACKS.length;
 
     /** Use this random number generator for your epsilon exploration. When you submit we will
