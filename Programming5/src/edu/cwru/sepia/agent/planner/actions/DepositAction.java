@@ -5,10 +5,9 @@ import edu.cwru.sepia.agent.planner.Peasant;
 import edu.cwru.sepia.agent.planner.Position;
 
 public class DepositAction implements StripsAction {
-    private int peasantId;
-    private Position peasantPos;
-    private Position townHallPos = GameState.TOWN_HALL_POSITION;
-    private boolean hasResource;
+    private final int peasantId;
+    private final Position peasantPos, townHallPos = GameState.TOWN_HALL_POSITION;
+    private final boolean hasResource;
 
     public DepositAction(Peasant peasant) {
         this.peasantId = peasant.getId();
@@ -22,10 +21,9 @@ public class DepositAction implements StripsAction {
     }
 
     @Override
-    public GameState apply(GameState state) {
+    public void apply(GameState state) {
         state.applyDepositAction(peasantId);
         state.update(this);
-        return state;
     }
 
     @Override

@@ -37,7 +37,7 @@ public interface StripsAction {
      * @param state State to apply action to
      * @return State resulting from successful action appliction.
      */
-    public GameState apply(GameState state);
+    public void apply(GameState state);
 
     public int getPeasantID();
 
