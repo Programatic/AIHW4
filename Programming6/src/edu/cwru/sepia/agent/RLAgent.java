@@ -1,11 +1,8 @@
 package edu.cwru.sepia.agent;
 
 import edu.cwru.sepia.action.Action;
-import edu.cwru.sepia.action.ActionFeedback;
-import edu.cwru.sepia.action.ActionResult;
-import edu.cwru.sepia.action.TargetedAction;
-import edu.cwru.sepia.environment.model.history.DamageLog;
-import edu.cwru.sepia.environment.model.history.DeathLog;
+import edu.cwru.sepia.agent.Callbacks.FeatureCallback;
+import edu.cwru.sepia.agent.Callbacks.ClosestDistance;
 import edu.cwru.sepia.environment.model.history.History;
 import edu.cwru.sepia.environment.model.state.State;
 import edu.cwru.sepia.environment.model.state.Unit;
@@ -14,7 +11,6 @@ import java.io.*;
 import java.util.*;
 
 public class RLAgent extends Agent {
-
     /**
      * Set in the constructor. Defines how many learning episodes your agent should run for.
      * When starting an episode. If the count is greater than this value print a message
@@ -37,7 +33,8 @@ public class RLAgent extends Agent {
     /**
      * Set this to whatever size your feature vector is.
      */
-    public static final int NUM_FEATURES = 5;
+    public static FeatureCallback[] FEATURE_CALLBACKS = {new ClosestDistance()};
+    public static final int NUM_FEATURES = FEATURE_CALLBACKS.length;
 
     /** Use this random number generator for your epsilon exploration. When you submit we will
      * change this seed so make sure that your agent works for more than the default seed.
@@ -299,7 +296,28 @@ public class RLAgent extends Agent {
                                            History.HistoryView historyView,
                                            int attackerId,
                                            int defenderId) {
-        return null;
+        double[] vec = new double[NUM_FEATURES];
+
+        for (int i = 0; i < NUM_FEATURES; i++) {
+            vec[i] = FEATURE_CALLBACKS[i].execute(this, stateView, historyView, attackerId, defenderId);
+        }
+
+        return vec;
+    }
+
+    public List<Integer> getMyFootmen() {
+        return myFootmen;
+    }
+
+    public List<Integer> getEnemyFootmen() {
+        return enemyFootmen;
+    }
+
+
+    // **************** UTILITY METHODS ****************
+
+    public static int manhattanDistance(int x1, int y1, int x2, int y2) {
+        return Math.abs(x1 - x2) + Math.abs(y1 - y2);
     }
 
     /**
