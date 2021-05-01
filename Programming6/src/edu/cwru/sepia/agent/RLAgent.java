@@ -18,7 +18,9 @@ import java.util.*;
 
 public class RLAgent extends Agent {
     Map<Integer, List<Double>> rewardsPath;
+    private int currEpisode = 0, currTestingEpisode = 0;
     private boolean evaluating = true;
+    private List<Double> averageRewards = new ArrayList<>();
     private double testReward = 0;
     /**
      * Set in the constructor. Defines how many learning episodes your agent should run for.
@@ -246,7 +248,7 @@ public class RLAgent extends Agent {
      */
     @Override
     public void terminalStep(State.StateView stateView, History.HistoryView historyView) {
-        update(stateView, historyView);
+        updateTurn(stateView, historyView);
         currTestingEpisode++;
         if(evaluating){
             if(currTestingEpisode == 5){
@@ -311,8 +313,17 @@ public class RLAgent extends Agent {
      * @param footmanId The footman we are updating the weights for
      * @return The updated weight vector.
      */
-    public double[] updateWeights(double[] oldWeights, double[] oldFeatures, double totalReward, State.StateView stateView, History.HistoryView historyView, int footmanId) {
-        return null;
+    // TODO: REWRITE
+    private double[] updateWeights(double[] oldWeights, double[] oldFeatures, double totalReward, State.StateView stateView, History.HistoryView historyView, int footmanId) {
+        double[] newWeights = new double[NUM_FEATURES];
+        int toAttack = argMaxQ(stateView, historyView, footmanId);
+        double maxQValue = calcQValue(stateView, historyView, footmanId, toAttack);
+        double previousQValue = qFromFeatures(oldFeatures);
+        double[] features = calculateFeatureVector(stateView, historyView, footmanId, toAttack);
+        for(int i = 0; i < NUM_FEATURES; i++){
+            newWeights[i] = oldWeights[i] + learningRate * (totalReward + (gamma * maxQValue) - previousQValue) * features[i];
+        }
+        return newWeights;
     }
 
     /**
@@ -435,6 +446,15 @@ public class RLAgent extends Agent {
         double q = 0;
         for (int i = 0; i < NUM_FEATURES; i++) {
             q = q + weights[i] * vec[i];
+        }
+
+        return q;
+    }
+
+    private double qFromFeatures(double[] features) {
+        double q = 0;
+        for (int i = 0; i < NUM_FEATURES; i++) {
+            q = q + weights[i] * features[i];
         }
 
         return q;
