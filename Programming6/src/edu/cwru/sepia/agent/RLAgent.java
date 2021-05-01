@@ -17,6 +17,7 @@ import java.io.*;
 import java.util.*;
 
 public class RLAgent extends Agent {
+    Map<Integer, List<Double>> rewardsPath;
     /**
      * Set in the constructor. Defines how many learning episodes your agent should run for.
      * When starting an episode. If the count is greater than this value print a message
@@ -96,7 +97,7 @@ public class RLAgent extends Agent {
     @Override
     public Map<Integer, Action> initialStep(State.StateView stateView, History.HistoryView historyView) {
 
-        // You will need to add code to check if you are in a testing or learning episode
+        rewardsPath = new HashMap<>();
 
         // Find all of your units
         myFootmen = new LinkedList<>();
@@ -106,6 +107,7 @@ public class RLAgent extends Agent {
             String unitName = unit.getTemplateView().getName().toLowerCase();
             if (unitName.equals("footman")) {
                 myFootmen.add(unitId);
+                rewardsPath.put(unitId, new ArrayList<>());
             } else {
                 System.err.println("Unknown unit type: " + unitName);
             }
@@ -174,12 +176,60 @@ public class RLAgent extends Agent {
     public Map<Integer, Action> middleStep(State.StateView stateView, History.HistoryView historyView) {
         Map<Integer, Action> actionMap = new HashMap<>();
 
+        updateTurn(stateView, historyView);
+
         for (int id : myFootmen) {
-            int target = argMaxQ(stateView, historyView, id);
+            int target = selectAction(stateView, historyView, id);
             actionMap.put(id, Action.createCompoundAttack(id, target));
         }
 
         return actionMap;
+    }
+
+    public void updateTurn(State.StateView stateView, History.HistoryView historyView) {
+        int previousTurn = stateView.getTurnNumber() - 1;
+
+        if (previousTurn < 0)
+            return;
+
+        Map<Integer, ActionResult> actionResults = historyView.getCommandFeedback(playernum, previousTurn);
+        List<DeathLog> deathLogs = historyView.getDeathLogs(previousTurn);
+
+        for (DeathLog deathLog : deathLogs) {
+            if (deathLog.getController() == ENEMY_PLAYERNUM) {
+                enemyFootmen.remove((Integer) deathLog.getDeadUnitID());
+            } else {
+                myFootmen.remove((Integer) deathLog.getDeadUnitID());
+                double reward = calculateReward(stateView, historyView, deathLog.getDeadUnitID());
+                rewardsPath.get(deathLog.getDeadUnitID()).add(reward);
+            }
+        }
+
+        for (int id : myFootmen) {
+            double reward = calculateReward(stateView, historyView, id);
+            int enemyId = ((TargetedAction) actionResults.get(id).getAction()).getTargetId();
+
+            rewardsPath.get(id).add(reward);
+            weights = doubleConvert(updateWeights(doubleCovert(weights), calculateFeatureVector(stateView, historyView, id, enemyId), getDiscountedReward(id), stateView, historyView, id));
+        }
+    }
+
+    private double[] doubleCovert(Double[] arr) {
+        double[] conv = new double[arr.length];
+
+        for (int i = 0; i < arr.length; i++)
+            conv[i] = arr[i];
+
+        return conv;
+    }
+
+    private Double[] doubleConvert(double[] arr) {
+        Double[] conv = new Double[arr.length];
+
+        for (int i = 0; i < arr.length; i++)
+            conv[i] = arr[i];
+
+        return conv;
     }
 
     /**
@@ -197,6 +247,17 @@ public class RLAgent extends Agent {
         // Save your weights
         saveWeights(weights);
 
+    }
+
+    private double getDiscountedReward(int id) {
+        List<Double> rewards = rewardsPath.get(id);
+        double discounted = 0;
+
+        for (int i = 0; i < rewards.size(); i++) {
+            discounted += Math.pow(gamma, i) * rewards.get(i);
+        }
+
+        return discounted;
     }
 
     /**
