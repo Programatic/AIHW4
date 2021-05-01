@@ -246,12 +246,48 @@ public class RLAgent extends Agent {
      */
     @Override
     public void terminalStep(State.StateView stateView, History.HistoryView historyView) {
+        update(stateView, historyView);
+        currTestingEpisode++;
+        if(evaluating){
+            if(currTestingEpisode == 5){
+                averageRewards.add(testReward/5);
+                testReward = 0.0;
+                printTestData(averageRewards);
+                currTestingEpisode = 0;
+                evaluating = false;
+            }
+        } else if(currTestingEpisode == 10){
+            evaluating = true;
+            currTestingEpisode = 0;
+            testReward = 0.0;
+        }
 
-        // MAKE SURE YOU CALL printTestData after you finish a test episode.
-
-        // Save your weights
         saveWeights(weights);
+        currEpisode++;
+        if(currEpisode > numEpisodes){
+            System.out.println("All Episodes Completed.");
+            System.exit(0);
+        }
 
+//        update(stateView, historyView);
+//
+//        if (evaluating) {
+//            if (++currTestingEpisode >= 5) {
+//                averageRewards.add(testReward/5);
+//                evaluating = false;
+//            }
+//        } else if (currEpisode % 10 == 0) {
+//            evaluating = true;
+//            currTestingEpisode = 0;
+//            testReward = 0;
+//        }
+//
+//        printTestData(averageRewards);
+//        saveWeights(weights);
+//        if (currEpisode > numEpisodes) {
+//            System.out.println("Completed all episodes.");
+//            System.exit(0);
+//        }
     }
 
     private double getDiscountedReward(int id) {
