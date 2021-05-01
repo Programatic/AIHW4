@@ -44,7 +44,7 @@ public class RLAgent extends Agent {
      * Set this to whatever size your feature vector is.
      */
     public static FeatureCallback[] FEATURE_CALLBACKS = {
-            new ClosestDistance(), new RatioHP(),
+            new RatioHP(),
             new FootmanAttackingEnemy(), new PreviouslyAttacked(), new PreviouslyAttacked(), new CanAttacKFootman(),
             new FootmanHP()};
     public static final int NUM_FEATURES = FEATURE_CALLBACKS.length;
@@ -265,6 +265,7 @@ public class RLAgent extends Agent {
             currTestingEpisode = 0;
             testReward = 0.0;
         }
+
         saveWeights(weights);
         currEpisode++;
         if(currEpisode > numEpisodes){
@@ -391,7 +392,13 @@ public class RLAgent extends Agent {
      * @return The current reward
      */
     public double calculateReward(State.StateView stateView, History.HistoryView historyView, int footmanId) {
-        double reward = -0.1;
+        double reward = 0;
+
+        Map<Integer, Action> commandsIssued = historyView.getCommandsIssued(playernum, stateView.getTurnNumber() - 1);
+        for (Map.Entry<Integer, Action> commandEntry : commandsIssued.entrySet()) {
+            if (commandEntry.getKey() == footmanId)
+                reward -= 0.1;
+        }
 
         for(DamageLog damageLog : historyView.getDamageLogs(stateView.getTurnNumber() - 1)) {
             if (damageLog.getAttackerID() == footmanId && damageLog.getAttackerController() == playernum) {
