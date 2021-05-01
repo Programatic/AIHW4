@@ -411,7 +411,7 @@ public class RLAgent extends Agent {
             if (deathLog.getDeadUnitID() == footmanId) {
                 reward -= 100;
             }
-            else if (deathLog.getController() == ENEMY_PLAYERNUM && attackedDeadEnemy(footmanId, deathLog, historyView, stateView.getTurnNumber() - 1)) {
+            else if (deathLog.getController() == ENEMY_PLAYERNUM && footmanWasAttackingDeadEnemy(footmanId, deathLog, historyView, stateView.getTurnNumber() - 1)) {
                 reward += 100;
             }
         }
