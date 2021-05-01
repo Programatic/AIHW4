@@ -18,6 +18,8 @@ import java.util.*;
 
 public class RLAgent extends Agent {
     Map<Integer, List<Double>> rewardsPath;
+    private boolean evaluating = true;
+    private double testReward = 0;
     /**
      * Set in the constructor. Defines how many learning episodes your agent should run for.
      * When starting an episode. If the count is greater than this value print a message
@@ -202,6 +204,7 @@ public class RLAgent extends Agent {
                 myFootmen.remove((Integer) deathLog.getDeadUnitID());
                 double reward = calculateReward(stateView, historyView, deathLog.getDeadUnitID());
                 rewardsPath.get(deathLog.getDeadUnitID()).add(reward);
+                testReward += reward;
             }
         }
 
@@ -210,7 +213,9 @@ public class RLAgent extends Agent {
             int enemyId = ((TargetedAction) actionResults.get(id).getAction()).getTargetId();
 
             rewardsPath.get(id).add(reward);
-            weights = doubleConvert(updateWeights(doubleCovert(weights), calculateFeatureVector(stateView, historyView, id, enemyId), getDiscountedReward(id), stateView, historyView, id));
+            testReward += reward;
+            if (!evaluating)
+                weights = doubleConvert(updateWeights(doubleCovert(weights), calculateFeatureVector(stateView, historyView, id, enemyId), getDiscountedReward(id), stateView, historyView, id));
         }
     }
 
