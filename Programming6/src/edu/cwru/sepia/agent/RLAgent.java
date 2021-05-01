@@ -393,6 +393,12 @@ public class RLAgent extends Agent {
     public double calculateReward(State.StateView stateView, History.HistoryView historyView, int footmanId) {
         double reward = 0;
 
+        Map<Integer, Action> commandsIssued = historyView.getCommandsIssued(playernum, stateView.getTurnNumber() - 1);
+        for (Map.Entry<Integer, Action> commandEntry : commandsIssued.entrySet()) {
+            if (commandEntry.getKey() == footmanId)
+                reward -= 0.1;
+        }
+
         for(DamageLog damageLog : historyView.getDamageLogs(stateView.getTurnNumber() - 1)) {
             if (damageLog.getAttackerID() == footmanId && damageLog.getAttackerController() == playernum) {
                 reward += damageLog.getDamage();
@@ -405,7 +411,7 @@ public class RLAgent extends Agent {
             if (deathLog.getDeadUnitID() == footmanId) {
                 reward -= 100;
             }
-            else if (deathLog.getController() == ENEMY_PLAYERNUM && footmanWasAttackingDeadEnemy(footmanId, deathLog, historyView, stateView.getTurnNumber() - 1)) {
+            else if (deathLog.getController() == ENEMY_PLAYERNUM && attackedDeadEnemy(footmanId, deathLog, historyView, stateView.getTurnNumber() - 1)) {
                 reward += 100;
             }
         }
