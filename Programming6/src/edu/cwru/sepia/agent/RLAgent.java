@@ -4,9 +4,8 @@ import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.action.ActionFeedback;
 import edu.cwru.sepia.action.ActionResult;
 import edu.cwru.sepia.action.TargetedAction;
-import edu.cwru.sepia.agent.Callbacks.ClosestDistance;
-import edu.cwru.sepia.agent.Callbacks.FeatureCallback;
-import edu.cwru.sepia.agent.Callbacks.RatioHP;
+import edu.cwru.sepia.agent.Callbacks.*;
+import edu.cwru.sepia.environment.Environment;
 import edu.cwru.sepia.environment.model.history.DamageLog;
 import edu.cwru.sepia.environment.model.history.DeathLog;
 import edu.cwru.sepia.environment.model.history.History;
@@ -18,6 +17,10 @@ import java.util.*;
 
 public class RLAgent extends Agent {
     Map<Integer, List<Double>> rewardsPath;
+    private int currEpisode = 0, currTestingEpisode = 0;
+    private boolean evaluating = true;
+    private List<Double> averageRewards = new ArrayList<>();
+    private double testReward = 0;
     /**
      * Set in the constructor. Defines how many learning episodes your agent should run for.
      * When starting an episode. If the count is greater than this value print a message
@@ -40,7 +43,10 @@ public class RLAgent extends Agent {
     /**
      * Set this to whatever size your feature vector is.
      */
-    public static FeatureCallback[] FEATURE_CALLBACKS = {new ClosestDistance(), new RatioHP()};
+    public static FeatureCallback[] FEATURE_CALLBACKS = {
+            new ClosestDistance(), new RatioHP(),
+            new FootmanAttackingEnemy(), new PreviouslyAttacked(), new PreviouslyAttacked(), new CanAttacKFootman(),
+            new FootmanHP()};
     public static final int NUM_FEATURES = FEATURE_CALLBACKS.length;
 
     /** Use this random number generator for your epsilon exploration. When you submit we will
@@ -202,6 +208,7 @@ public class RLAgent extends Agent {
                 myFootmen.remove((Integer) deathLog.getDeadUnitID());
                 double reward = calculateReward(stateView, historyView, deathLog.getDeadUnitID());
                 rewardsPath.get(deathLog.getDeadUnitID()).add(reward);
+                testReward += reward;
             }
         }
 
@@ -210,6 +217,8 @@ public class RLAgent extends Agent {
             int enemyId = ((TargetedAction) actionResults.get(id).getAction()).getTargetId();
 
             rewardsPath.get(id).add(reward);
+            testReward += reward;
+            if (!evaluating)
             weights = doubleConvert(updateWeights(doubleCovert(weights), calculateFeatureVector(stateView, historyView, id, enemyId), getDiscountedReward(id), stateView, historyView, id));
         }
     }
@@ -241,12 +250,47 @@ public class RLAgent extends Agent {
      */
     @Override
     public void terminalStep(State.StateView stateView, History.HistoryView historyView) {
-
-        // MAKE SURE YOU CALL printTestData after you finish a test episode.
-
-        // Save your weights
+        update(stateView, historyView);
+        currTestingEpisode++;
+        if(evaluating){
+            if(currTestingEpisode == 5){
+                averageRewards.add(testReward/5);
+                testReward = 0.0;
+                printTestData(averageRewards);
+                currTestingEpisode = 0;
+                evaluating = false;
+            }
+        } else if(currTestingEpisode == 10){
+            evaluating = true;
+            currTestingEpisode = 0;
+            testReward = 0.0;
+        }
         saveWeights(weights);
+        currEpisode++;
+        if(currEpisode > numEpisodes){
+            System.out.println("All Episodes Completed.");
+            System.exit(0);
+        }
 
+//        update(stateView, historyView);
+//
+//        if (evaluating) {
+//            if (++currTestingEpisode >= 5) {
+//                averageRewards.add(testReward/5);
+//                evaluating = false;
+//            }
+//        } else if (currEpisode % 10 == 0) {
+//            evaluating = true;
+//            currTestingEpisode = 0;
+//            testReward = 0;
+//        }
+//
+//        printTestData(averageRewards);
+//        saveWeights(weights);
+//        if (currEpisode > numEpisodes) {
+//            System.out.println("Completed all episodes.");
+//            System.exit(0);
+//        }
     }
 
     private double getDiscountedReward(int id) {
@@ -293,7 +337,7 @@ public class RLAgent extends Agent {
      */
     public int selectAction(State.StateView stateView, History.HistoryView historyView, int attackerId) {
         double rand = random.nextDouble();
-        if (rand < 1 - epsilon)
+        if (rand < 1 - epsilon || evaluating)
             return argMaxQ(stateView, historyView, attackerId);
 
         return enemyFootmen.get(random.nextInt(enemyFootmen.size()));
