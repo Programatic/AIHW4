@@ -176,7 +176,7 @@ public class RLAgent extends Agent {
     public Map<Integer, Action> middleStep(State.StateView stateView, History.HistoryView historyView) {
         Map<Integer, Action> actionMap = new HashMap<>();
 
-        updateTurn(stateView, historyView);
+        update(stateView, historyView);
 
         for (int id : myFootmen) {
             int target = selectAction(stateView, historyView, id);
@@ -186,7 +186,7 @@ public class RLAgent extends Agent {
         return actionMap;
     }
 
-    public void updateTurn(State.StateView stateView, History.HistoryView historyView) {
+    public void update(State.StateView stateView, History.HistoryView historyView) {
         int previousTurn = stateView.getTurnNumber() - 1;
 
         if (previousTurn < 0)
@@ -270,10 +270,18 @@ public class RLAgent extends Agent {
      * @param footmanId The footman we are updating the weights for
      * @return The updated weight vector.
      */
-    public double[] updateWeights(double[] oldWeights, double[] oldFeatures, double totalReward, State.StateView stateView, History.HistoryView historyView, int footmanId) {
-        return null;
+    // TODO: REWRITE
+    private double[] updateWeights(double[] oldWeights, double[] oldFeatures, double totalReward, State.StateView stateView, History.HistoryView historyView, int footmanId) {
+        double[] newWeights = new double[NUM_FEATURES];
+        int toAttack = argMaxQ(stateView, historyView, footmanId);
+        double maxQValue = calcQValue(stateView, historyView, footmanId, toAttack);
+        double previousQValue = qFromFeatures(oldFeatures);
+        double[] features = calculateFeatureVector(stateView, historyView, footmanId, toAttack);
+        for(int i = 0; i < NUM_FEATURES; i++){
+            newWeights[i] = oldWeights[i] + learningRate * (totalReward + (gamma * maxQValue) - previousQValue) * features[i];
+        }
+        return newWeights;
     }
-
     /**
      * Given a footman and the current state and history of the game select the enemy that this unit should
      * attack. This is where you would do the epsilon-greedy action selection.
@@ -339,7 +347,7 @@ public class RLAgent extends Agent {
      * @return The current reward
      */
     public double calculateReward(State.StateView stateView, History.HistoryView historyView, int footmanId) {
-        double reward = 0;
+        double reward = -0.1;
 
         for(DamageLog damageLog : historyView.getDamageLogs(stateView.getTurnNumber() - 1)) {
             if (damageLog.getAttackerID() == footmanId && damageLog.getAttackerController() == playernum) {
@@ -353,7 +361,7 @@ public class RLAgent extends Agent {
             if (deathLog.getDeadUnitID() == footmanId) {
                 reward -= 100;
             }
-            else if (deathLog.getController() == ENEMY_PLAYERNUM && footmanWasAttackingDeadEnemy(footmanId, deathLog, historyView, stateView.getTurnNumber() - 1)) {
+            else if (deathLog.getController() == ENEMY_PLAYERNUM && attackedDeadEnemy(footmanId, deathLog, historyView, stateView.getTurnNumber() - 1)) {
                 reward += 100;
             }
         }
@@ -361,7 +369,7 @@ public class RLAgent extends Agent {
         return reward;
     }
 
-    private boolean footmanWasAttackingDeadEnemy(int footmanId, DeathLog deathLog, History.HistoryView historyView, int lastTurnNumber) {
+    private boolean attackedDeadEnemy(int footmanId, DeathLog deathLog, History.HistoryView historyView, int lastTurnNumber) {
       Map<Integer, ActionResult> actionResults = historyView.getCommandFeedback(playernum, lastTurnNumber);
       if (actionResults.containsKey(footmanId) && actionResults.get(footmanId).getFeedback().equals(ActionFeedback.COMPLETED)) {
             return deathLog.getDeadUnitID() == ((TargetedAction) actionResults.get(footmanId).getAction()).getTargetId();
@@ -388,12 +396,13 @@ public class RLAgent extends Agent {
                              History.HistoryView historyView,
                              int attackerId,
                              int defenderId) {
+        return qFromFeatures(calculateFeatureVector(stateView, historyView, attackerId, defenderId));
+    }
 
-        double[] vec = calculateFeatureVector(stateView, historyView, attackerId, defenderId);
-
+    private double qFromFeatures(double[] features) {
         double q = 0;
         for (int i = 0; i < NUM_FEATURES; i++) {
-            q = q + weights[i] * vec[i];
+            q = q + weights[i] * features[i];
         }
 
         return q;
