@@ -21,7 +21,7 @@ public class RLAgent extends Agent {
     private Map<Integer, List<Double>> rewards = new HashMap<>();
     private ArrayList<Double> avgReward = new ArrayList<>();
     private double totalReward = 0;
-    private boolean isTraining;
+    private boolean training;
     private int currentStep;
 
     /**
@@ -193,7 +193,7 @@ public class RLAgent extends Agent {
                 double[] vec = calculateFeatureVector(stateView, historyView, id, previousTarget);
                 double dReward = discountedReward(id);
 
-                if (isTraining)
+                if (training)
                     weights = convertDouble(updateWeights(weights, vec, dReward, stateView, historyView, id));
             }
 
@@ -202,43 +202,6 @@ public class RLAgent extends Agent {
 
             actionMap.put(id, Action.createCompoundAttack(id, target));
         }
-
-//        double playerReward;
-//        double[] featureV;
-//        int newEnemy;
-//        Map<Integer, Action> actions = new HashMap<>();
-//
-//        int previousTurnNum = stateView.getTurnNumber() - 1;
-//
-//        prune(stateView, historyView);
-//        // For of our footmen:
-//        // 1. Find best enemy to attack
-//        // 2. Update Weights
-//        // 3. Put action in action map
-//
-//        for (int footmanId : myFootmen) {
-//            playerReward = calculateReward(stateView, historyView, footmanId);
-//            rewards.get(footmanId).add(playerReward);
-//            totalReward += playerReward;
-//
-//            if (previousTurnNum > -1) {
-//
-//                int previousEnemy = lastEnemy.get(footmanId);
-//
-//                featureV = calculateFeatureVector(stateView, historyView, footmanId, previousEnemy);
-//
-//                double discountedReward = getDiscountedReward(footmanId);
-//
-//                if (isTraining) {
-//                    weights = updateWeights(weights, featureV, discountedReward, stateView, historyView, footmanId);
-//                }
-//                newEnemy = selectAction(stateView, historyView, footmanId);
-//            } else {
-//                newEnemy = selectAction(stateView, historyView, footmanId);
-//            }
-//            lastEnemy.put(footmanId, newEnemy);
-//            actions.put(footmanId, Action.createCompoundAttack(footmanId, newEnemy));
-//        }
 
         return actionMap;
     }
@@ -251,21 +214,20 @@ public class RLAgent extends Agent {
      * It is also a good idea to save your weights with the saveWeights function.
      */
     @Override
-    // TODO: 
     public void terminalStep(State.StateView stateView, History.HistoryView historyView) {
         currentStep += 1;
-        if (isTraining && currentStep == NUM_TRAINING_STEPS) {
-            isTraining = false;
-            totalReward = 0.0;
+        if (training && currentStep == 10) {
             currentStep = 0;
-        } else if (!isTraining && currentStep == NUM_TESTING_STEPS) {
-            isTraining = true;
-            avgReward.add(totalReward / NUM_TESTING_STEPS);
+            totalReward = 0;
+            training = false;
+        } else if (!training && currentStep == 5) {
+            training = true;
+            avgReward.add(totalReward / 5);
+            totalReward = 0;
+            currentStep = 0;
             printTestData(avgReward);
-            totalReward = 0.0;
-            currentStep = 0;
         }
-        // Save your weights
+
         saveWeights(weights);
     }
 
