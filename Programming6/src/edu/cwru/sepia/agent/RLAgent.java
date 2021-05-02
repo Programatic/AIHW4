@@ -417,23 +417,8 @@ public class RLAgent extends Agent {
                                            int defenderId) {
         double[] features = new double[NUM_FEATURES];
 
-        // Bias
-        features[0] = CALLBACKS[0].execute(null, null, null, null, null, 0, 9);
-
-        // Closest enemy feature
-        double minId = enemyFootmen.parallelStream()
-                .min(Comparator.comparingDouble(id -> manhattanDistance(stateView, attackerId, id)))
-                .orElse(-1);
-
-        features[1] = CALLBACKS[1].execute(enemyFootmen, myFootmen, null, stateView, historyView, attackerId, defenderId);
-        features[2] = CALLBACKS[2].execute(enemyFootmen, myFootmen, null, stateView, historyView, attackerId, defenderId);
-
-
-        int previousTurn = stateView.getTurnNumber() - 1;
-        if (previousTurn > -1) {
-            features[3] = CALLBACKS[3].execute(enemyFootmen, myFootmen, previousTarget, stateView, historyView, attackerId, defenderId);
-            features[4] = CALLBACKS[4].execute(enemyFootmen, myFootmen, previousTarget, stateView, historyView, attackerId, defenderId);
-        }
+        for (int i = 0; i < NUM_FEATURES; i++)
+            features[i] = CALLBACKS[i].execute(enemyFootmen, myFootmen, previousTarget, stateView, historyView, attackerId, defenderId);
 
         return features;
     }
