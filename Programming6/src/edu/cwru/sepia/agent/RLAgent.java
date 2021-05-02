@@ -1,11 +1,8 @@
 package edu.cwru.sepia.agent;
 
 import edu.cwru.sepia.action.Action;
-import edu.cwru.sepia.action.ActionFeedback;
-import edu.cwru.sepia.action.ActionResult;
 import edu.cwru.sepia.action.TargetedAction;
-import edu.cwru.sepia.agent.Callbacks.*;
-import edu.cwru.sepia.environment.Environment;
+import edu.cwru.sepia.agent.callbacks.*;
 import edu.cwru.sepia.environment.model.history.DamageLog;
 import edu.cwru.sepia.environment.model.history.DeathLog;
 import edu.cwru.sepia.environment.model.history.History;
@@ -16,11 +13,17 @@ import java.io.*;
 import java.util.*;
 
 public class RLAgent extends Agent {
-    Map<Integer, List<Double>> rewardsPath;
-    private int currEpisode = 0, currTestingEpisode = 0;
-    private boolean evaluating = true;
-    private List<Double> averageRewards = new ArrayList<>();
-    private double testReward = 0;
+    public static final int NUM_TRAINING_STEPS = 10;
+    public static final int NUM_TESTING_STEPS = 5;
+    public static Callback[] CALLBACKS = {new Constant(), new ClosestEnemy(), new HPDifference(), new MultiAttack(), new GroupAttack()};
+
+    private Map<Integer, Integer> previousTarget = new HashMap<>();
+    private Map<Integer, List<Double>> rewards = new HashMap<>();
+    private ArrayList<Double> avgReward = new ArrayList<>();
+    private double totalReward = 0;
+    private boolean isTraining;
+    private int currentStep;
+
     /**
      * Set in the constructor. Defines how many learning episodes your agent should run for.
      * When starting an episode. If the count is greater than this value print a message
@@ -43,11 +46,7 @@ public class RLAgent extends Agent {
     /**
      * Set this to whatever size your feature vector is.
      */
-    public static FeatureCallback[] FEATURE_CALLBACKS = {
-            new RatioHP(),
-            new FootmanAttackingEnemy(), new PreviouslyAttacked(), new PreviouslyAttacked(), new CanAttacKFootman(),
-            new FootmanHP()};
-    public static final int NUM_FEATURES = FEATURE_CALLBACKS.length;
+    public static final int NUM_FEATURES = 5;
 
     /** Use this random number generator for your epsilon exploration. When you submit we will
      * change this seed so make sure that your agent works for more than the default seed.
@@ -103,7 +102,7 @@ public class RLAgent extends Agent {
     @Override
     public Map<Integer, Action> initialStep(State.StateView stateView, History.HistoryView historyView) {
 
-        rewardsPath = new HashMap<>();
+        // You will need to add code to check if you are in a testing or learning episode
 
         // Find all of your units
         myFootmen = new LinkedList<>();
@@ -113,7 +112,7 @@ public class RLAgent extends Agent {
             String unitName = unit.getTemplateView().getName().toLowerCase();
             if (unitName.equals("footman")) {
                 myFootmen.add(unitId);
-                rewardsPath.put(unitId, new ArrayList<>());
+                rewards.put(unitId, new ArrayList<>());
             } else {
                 System.err.println("Unknown unit type: " + unitName);
             }
@@ -146,7 +145,7 @@ public class RLAgent extends Agent {
      * the deaths from the last turn do something similar to the following snippet. Please be aware that on the first
      * turn you should not call this as you will get nothing back.
      *
-     **
+     ** 
      *for(DeathLog deathLog : historyView.getDeathLogs(stateView.getTurnNumber() -1)) {
      *     System.out.println("Player: " + deathLog.getController() + " unit: " + deathLog.getDeadUnitID());
      * }
@@ -165,80 +164,83 @@ public class RLAgent extends Agent {
      *
      * Remember that you can use result.getFeedback() on an ActionResult, and compare the result to an ActionFeedback enum.
      * Useful ActionFeedback values include COMPLETED, FAILED, and INCOMPLETE.
-     *
+     * 
      * You can also get the ID of the unit executing an action from an ActionResult. For example,
      * result.getAction().getUnitID()
-     *
+     * 
      * For this assignment it will be most useful to create compound attack actions. These will move your unit
      * within range of the enemy and then attack them once. You can create one using the static method in Action:
      * Action.createCompoundAttack(attackerID, targetID)
-     *
+     * 
      * You will then need to add the actions you create to a Map that will be returned. This creates a mapping
      * between the ID of the unit performing the action and the Action object.
-     *
+     * 
      * @return New actions to execute or nothing if an event has not occurred.
      */
     @Override
     public Map<Integer, Action> middleStep(State.StateView stateView, History.HistoryView historyView) {
         Map<Integer, Action> actionMap = new HashMap<>();
 
-        update(stateView, historyView);
-
-        for (int id : myFootmen) {
-            int target = selectAction(stateView, historyView, id);
-            actionMap.put(id, Action.createCompoundAttack(id, target));
-        }
-
-        return actionMap;
-    }
-
-    public void update(State.StateView stateView, History.HistoryView historyView) {
-        int previousTurn = stateView.getTurnNumber() - 1;
-
-        if (previousTurn < 0)
-            return;
-
-        Map<Integer, ActionResult> actionResults = historyView.getCommandFeedback(playernum, previousTurn);
-        List<DeathLog> deathLogs = historyView.getDeathLogs(previousTurn);
-
-        for (DeathLog deathLog : deathLogs) {
-            if (deathLog.getController() == ENEMY_PLAYERNUM) {
-                enemyFootmen.remove((Integer) deathLog.getDeadUnitID());
-            } else {
-                myFootmen.remove((Integer) deathLog.getDeadUnitID());
-                double reward = calculateReward(stateView, historyView, deathLog.getDeadUnitID());
-                rewardsPath.get(deathLog.getDeadUnitID()).add(reward);
-                testReward += reward;
-            }
-        }
+        prune(stateView, historyView);
 
         for (int id : myFootmen) {
             double reward = calculateReward(stateView, historyView, id);
-            int enemyId = ((TargetedAction) actionResults.get(id).getAction()).getTargetId();
+            rewards.get(id).add(reward);
+            totalReward += reward;
 
-            rewardsPath.get(id).add(reward);
-            testReward += reward;
-            if (!evaluating)
-            weights = doubleConvert(updateWeights(doubleCovert(weights), calculateFeatureVector(stateView, historyView, id, enemyId), getDiscountedReward(id), stateView, historyView, id));
+            if (stateView.getTurnNumber() - 1 > -1) {
+                int previousTarget = this.previousTarget.get(id);
+                double[] vec = calculateFeatureVector(stateView, historyView, id, previousTarget);
+                double dReward = discountedReward(id);
+
+                if (isTraining)
+                    weights = convertDouble(updateWeights(weights, vec, dReward, stateView, historyView, id));
+            }
+
+            int target = selectAction(stateView, historyView, id);
+            previousTarget.put(id, target);
+
+            actionMap.put(id, Action.createCompoundAttack(id, target));
         }
-    }
 
-    private double[] doubleCovert(Double[] arr) {
-        double[] conv = new double[arr.length];
+//        double playerReward;
+//        double[] featureV;
+//        int newEnemy;
+//        Map<Integer, Action> actions = new HashMap<>();
+//
+//        int previousTurnNum = stateView.getTurnNumber() - 1;
+//
+//        prune(stateView, historyView);
+//        // For of our footmen:
+//        // 1. Find best enemy to attack
+//        // 2. Update Weights
+//        // 3. Put action in action map
+//
+//        for (int footmanId : myFootmen) {
+//            playerReward = calculateReward(stateView, historyView, footmanId);
+//            rewards.get(footmanId).add(playerReward);
+//            totalReward += playerReward;
+//
+//            if (previousTurnNum > -1) {
+//
+//                int previousEnemy = lastEnemy.get(footmanId);
+//
+//                featureV = calculateFeatureVector(stateView, historyView, footmanId, previousEnemy);
+//
+//                double discountedReward = getDiscountedReward(footmanId);
+//
+//                if (isTraining) {
+//                    weights = updateWeights(weights, featureV, discountedReward, stateView, historyView, footmanId);
+//                }
+//                newEnemy = selectAction(stateView, historyView, footmanId);
+//            } else {
+//                newEnemy = selectAction(stateView, historyView, footmanId);
+//            }
+//            lastEnemy.put(footmanId, newEnemy);
+//            actions.put(footmanId, Action.createCompoundAttack(footmanId, newEnemy));
+//        }
 
-        for (int i = 0; i < arr.length; i++)
-            conv[i] = arr[i];
-
-        return conv;
-    }
-
-    private Double[] doubleConvert(double[] arr) {
-        Double[] conv = new Double[arr.length];
-
-        for (int i = 0; i < arr.length; i++)
-            conv[i] = arr[i];
-
-        return conv;
+        return actionMap;
     }
 
     /**
@@ -249,64 +251,27 @@ public class RLAgent extends Agent {
      * It is also a good idea to save your weights with the saveWeights function.
      */
     @Override
+    // TODO: 
     public void terminalStep(State.StateView stateView, History.HistoryView historyView) {
-        update(stateView, historyView);
-        currTestingEpisode++;
-        if(evaluating){
-            if(currTestingEpisode == 5){
-                averageRewards.add(testReward/5);
-                testReward = 0.0;
-                printTestData(averageRewards);
-                currTestingEpisode = 0;
-                evaluating = false;
-            }
-        } else if(currTestingEpisode == 10){
-            evaluating = true;
-            currTestingEpisode = 0;
-            testReward = 0.0;
+        currentStep += 1;
+        if (isTraining && currentStep == NUM_TRAINING_STEPS) {
+            isTraining = false;
+            totalReward = 0.0;
+            currentStep = 0;
+        } else if (!isTraining && currentStep == NUM_TESTING_STEPS) {
+            isTraining = true;
+            avgReward.add(totalReward / NUM_TESTING_STEPS);
+            printTestData(avgReward);
+            totalReward = 0.0;
+            currentStep = 0;
         }
-
+        // Save your weights
         saveWeights(weights);
-        currEpisode++;
-        if(currEpisode > numEpisodes){
-            System.out.println("All Episodes Completed.");
-            System.exit(0);
-        }
-
-//        update(stateView, historyView);
-//
-//        if (evaluating) {
-//            if (++currTestingEpisode >= 5) {
-//                averageRewards.add(testReward/5);
-//                evaluating = false;
-//            }
-//        } else if (currEpisode % 10 == 0) {
-//            evaluating = true;
-//            currTestingEpisode = 0;
-//            testReward = 0;
-//        }
-//
-//        printTestData(averageRewards);
-//        saveWeights(weights);
-//        if (currEpisode > numEpisodes) {
-//            System.out.println("Completed all episodes.");
-//            System.exit(0);
-//        }
     }
 
-    private double getDiscountedReward(int id) {
-        List<Double> rewards = rewardsPath.get(id);
-        double discounted = 0;
-
-        for (int i = 0; i < rewards.size(); i++) {
-            discounted += Math.pow(gamma, i) * rewards.get(i);
-        }
-
-        return discounted;
-    }
 
     /**
-     * Calculate the updated weights for this agent.
+     * Calculate the updated weights for this agent. 
      * @param oldWeights Weights prior to update
      * @param oldFeatures Features from (s,a)
      * @param totalReward Cumulative discounted reward for this footman.
@@ -315,18 +280,21 @@ public class RLAgent extends Agent {
      * @param footmanId The footman we are updating the weights for
      * @return The updated weight vector.
      */
-    // TODO: REWRITE
-    private double[] updateWeights(double[] oldWeights, double[] oldFeatures, double totalReward, State.StateView stateView, History.HistoryView historyView, int footmanId) {
-        double[] newWeights = new double[NUM_FEATURES];
-        int toAttack = argMaxQ(stateView, historyView, footmanId);
-        double maxQValue = calcQValue(stateView, historyView, footmanId, toAttack);
-        double previousQValue = qFromFeatures(oldFeatures);
-        double[] features = calculateFeatureVector(stateView, historyView, footmanId, toAttack);
-        for(int i = 0; i < NUM_FEATURES; i++){
-            newWeights[i] = oldWeights[i] + learningRate * (totalReward + (gamma * maxQValue) - previousQValue) * features[i];
-        }
-        return newWeights;
+    public double[] updateWeights(Double[] oldWeights, double[] oldFeatures, double totalReward,
+                                  State.StateView stateView, History.HistoryView historyView, int footmanId) {
+        int newEnemyId = selectAction(stateView, historyView, footmanId);
+
+        double[] weights = new double[NUM_FEATURES];
+
+        double newQValue = calcQValue(stateView, historyView, footmanId, newEnemyId);
+        double oldQValue = qFromFeatures(oldFeatures);
+        
+        for (int i = 0; i < NUM_FEATURES; i++) 
+            weights[i] = oldWeights[i] + (learningRate * ((totalReward + (gamma * newQValue)) - oldQValue) * oldFeatures[i]);
+
+        return weights;
     }
+
     /**
      * Given a footman and the current state and history of the game select the enemy that this unit should
      * attack. This is where you would do the epsilon-greedy action selection.
@@ -337,25 +305,11 @@ public class RLAgent extends Agent {
      * @return The enemy footman ID this unit should attack
      */
     public int selectAction(State.StateView stateView, History.HistoryView historyView, int attackerId) {
-        double rand = random.nextDouble();
-        if (rand < 1 - epsilon || evaluating)
-            return argMaxQ(stateView, historyView, attackerId);
-
-        return enemyFootmen.get(random.nextInt(enemyFootmen.size()));
-    }
-
-    private int argMaxQ(State.StateView stateView, History.HistoryView historyView, int attackerId) {
-        int attack = -1;
-        double q = Double.NEGATIVE_INFINITY;
-        for (int id : enemyFootmen) {
-            double calculated = calcQValue(stateView, historyView, attackerId, id);
-            if (calculated > q) {
-                q = calculated;
-                attack = id;
-            }
+        if (random.nextDouble() < epsilon) {
+            return enemyFootmen.get(random.nextInt(enemyFootmen.size()));
         }
 
-        return attack;
+        return argMaxQ(stateView, historyView, attackerId);
     }
 
     /**
@@ -392,41 +346,31 @@ public class RLAgent extends Agent {
      * @return The current reward
      */
     public double calculateReward(State.StateView stateView, History.HistoryView historyView, int footmanId) {
-        double reward = 0;
+        double reward = 0.0;
 
-        Map<Integer, Action> commandsIssued = historyView.getCommandsIssued(playernum, stateView.getTurnNumber() - 1);
-        for (Map.Entry<Integer, Action> commandEntry : commandsIssued.entrySet()) {
-            if (commandEntry.getKey() == footmanId)
-                reward -= 0.1;
+        if (historyView.getCommandsIssued(playernum, stateView.getTurnNumber() - 1).containsKey(footmanId)) {
+            reward -= 0.1;
         }
 
-        for(DamageLog damageLog : historyView.getDamageLogs(stateView.getTurnNumber() - 1)) {
-            if (damageLog.getAttackerID() == footmanId && damageLog.getAttackerController() == playernum) {
-                reward += damageLog.getDamage();
-            } else if (damageLog.getDefenderID() == footmanId && damageLog.getAttackerController() == ENEMY_PLAYERNUM) {
-                reward -= damageLog.getDamage();
+        for (DamageLog damageLogs : historyView.getDamageLogs(stateView.getTurnNumber() - 1)) {
+            if (damageLogs.getAttackerID() == footmanId) {
+                reward += damageLogs.getDamage();
+            } else if (damageLogs.getDefenderID() == footmanId) {
+                reward -= damageLogs.getDamage();
             }
         }
 
-        for(DeathLog deathLog : historyView.getDeathLogs(stateView.getTurnNumber() -1)) {
-            if (deathLog.getDeadUnitID() == footmanId) {
+        for (DeathLog deathLog : historyView.getDeathLogs(stateView.getTurnNumber() - 1)) {
+            Map<Integer, Action> commands = historyView.getCommandsIssued(playernum, stateView.getTurnNumber() - 1);
+            int dead = deathLog.getDeadUnitID();
+            if (myFootmen.contains(dead) && footmanId == dead) {
                 reward -= 100;
-            }
-            else if (deathLog.getController() == ENEMY_PLAYERNUM && attackedDeadEnemy(footmanId, deathLog, historyView, stateView.getTurnNumber() - 1)) {
+            } else if (enemyFootmen.contains(dead) && ((TargetedAction) commands.get(footmanId)).getTargetId() == dead) {
                 reward += 100;
             }
         }
 
         return reward;
-    }
-
-    private boolean attackedDeadEnemy(int footmanId, DeathLog deathLog, History.HistoryView historyView, int lastTurnNumber) {
-      Map<Integer, ActionResult> actionResults = historyView.getCommandFeedback(playernum, lastTurnNumber);
-      if (actionResults.containsKey(footmanId) && actionResults.get(footmanId).getFeedback().equals(ActionFeedback.COMPLETED)) {
-            return deathLog.getDeadUnitID() == ((TargetedAction) actionResults.get(footmanId).getAction()).getTargetId();
-      }
-
-      return false;
     }
 
     /**
@@ -443,30 +387,19 @@ public class RLAgent extends Agent {
      * @param defenderId An enemy footman that your footman would be attacking
      * @return The approximate Q-value
      */
-    public double calcQValue(State.StateView stateView,
-                             History.HistoryView historyView,
-                             int attackerId,
-                             int defenderId) {
-        return qFromFeatures(calculateFeatureVector(stateView, historyView, attackerId, defenderId));
-    }
-
-    private double qFromFeatures(double[] features) {
-        double q = 0;
-        for (int i = 0; i < NUM_FEATURES; i++) {
-            q = q + weights[i] * features[i];
-        }
-
-        return q;
+    public double calcQValue(State.StateView stateView, History.HistoryView historyView, int attackerId, int defenderId) {
+        double[] features = calculateFeatureVector(stateView, historyView, attackerId, defenderId);
+        return qFromFeatures(features);
     }
 
     /**
      * Given a state and action calculate your features here. Please include a comment explaining what features
      * you chose and why you chose them.
      *
-     * for example: HP
+     * for example: HP 
      * UnitView attacker = stateView.getUnit(attackerId);
      * attacker.getHP()
-     *
+     * 
      * All of your feature functions should evaluate to a double. Collect all of these into an array. You will
      * take a dot product of this array with the weights array to get a Q-value for a given state action.
      *
@@ -480,33 +413,98 @@ public class RLAgent extends Agent {
      * @param defenderId An enemy footman. The one you are considering attacking.
      * @return The array of feature function outputs.
      */
-    public double[] calculateFeatureVector(State.StateView stateView,
-                                           History.HistoryView historyView,
-                                           int attackerId,
+    public double[] calculateFeatureVector(State.StateView stateView, History.HistoryView historyView, int attackerId,
                                            int defenderId) {
-        double[] vec = new double[NUM_FEATURES];
+        double[] features = new double[NUM_FEATURES];
 
-        for (int i = 0; i < NUM_FEATURES; i++) {
-            vec[i] = FEATURE_CALLBACKS[i].execute(this, stateView, historyView, attackerId, defenderId);
+        // Bias
+        features[0] = CALLBACKS[0].execute(null, null, null, null, null, 0, 9);
+
+        // Closest enemy feature
+        double minId = enemyFootmen.parallelStream()
+                .min(Comparator.comparingDouble(id -> manhattanDistance(stateView, attackerId, id)))
+                .orElse(-1);
+
+        features[1] = CALLBACKS[1].execute(enemyFootmen, myFootmen, null, stateView, historyView, attackerId, defenderId);
+        features[2] = CALLBACKS[2].execute(enemyFootmen, myFootmen, null, stateView, historyView, attackerId, defenderId);
+
+
+        int previousTurn = stateView.getTurnNumber() - 1;
+        if (previousTurn > -1) {
+            features[3] = CALLBACKS[3].execute(enemyFootmen, myFootmen, previousTarget, stateView, historyView, attackerId, defenderId);
+            features[4] = CALLBACKS[4].execute(enemyFootmen, myFootmen, previousTarget, stateView, historyView, attackerId, defenderId);
         }
 
-        return vec;
+        return features;
     }
 
-    public List<Integer> getMyFootmen() {
-        return myFootmen;
+    // ****************** New Methods ********************
+    
+    private Double[] convertDouble(double[] arr) {
+        Double[] narr = new Double[arr.length];
+        for (int i = 0; i < arr.length; i++)
+            narr[i] = arr[i];
+        
+        return narr;
     }
 
-    public List<Integer> getEnemyFootmen() {
-        return enemyFootmen;
+    private void prune(State.StateView stateView, History.HistoryView historyView) {
+        for (DeathLog deathLog : historyView.getDeathLogs(stateView.getTurnNumber() - 1)) {
+            if (deathLog.getController() == ENEMY_PLAYERNUM && enemyFootmen.contains(deathLog.getDeadUnitID())) {
+                enemyFootmen.remove((Integer) deathLog.getDeadUnitID());
+            } else if (deathLog.getController() == playernum && myFootmen.contains(deathLog.getDeadUnitID())){
+                myFootmen.remove((Integer) deathLog.getDeadUnitID());
+            }
+        }
     }
 
+    public double discountedReward(int id) {
+        List<Double> rewardList = rewards.get(id);
+        double reward = 0;
+        for (int i = 0; i < rewardList.size(); i++) {
+            reward += Math.pow(gamma, i) * rewardList.get(i);
+        }
 
-    // **************** UTILITY METHODS ****************
+        return reward;
+    }
 
-    public static int manhattanDistance(int x1, int y1, int x2, int y2) {
+    public double qFromFeatures(double[] features) {
+        double q = 0;
+        for (int i = 0; i < features.length; i++) {
+            q += weights[i] * features[i] ;
+        }
+
+        return q;
+    }
+
+    public int argMaxQ(State.StateView stateView, History.HistoryView historyView, int attackerId) {
+        int id = -1;
+        double q = Double.NEGATIVE_INFINITY;
+
+        for (int enemy : enemyFootmen) {
+            double tq = calcQValue(stateView, historyView, attackerId, enemy);
+            if (tq > q) {
+                q = tq;
+                id = enemy;
+            }
+        }
+
+        return id;
+    }
+
+    public Map<Integer, Integer> getPreviousTarget() {
+        return previousTarget;
+    }
+
+    public static double manhattanDistance(State.StateView stateView, int attacker, int defender) {
+        int x1 = stateView.getUnit(attacker).getXPosition();
+        int x2 = stateView.getUnit(defender).getXPosition();
+        int y1 = stateView.getUnit(attacker).getYPosition();
+        int y2 = stateView.getUnit(defender).getYPosition();
+
         return Math.abs(x1 - x2) + Math.abs(y1 - y2);
     }
+
 
     /**
      * DO NOT CHANGE THIS!
